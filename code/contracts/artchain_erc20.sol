@@ -29,9 +29,6 @@ contract SafeMath {
   event Burn(address indexed _from, uint256 _value);
 }
 
-
-
-
 /**
  * ERC 20 token
  *
@@ -56,7 +53,7 @@ contract StandardToken is SafeMath {
             // receiver的户头 增加 对应token的数量， 使用 safemath 交易
             balances[_to] = super.safeAdd(balances[_to], _value);
 
-            emit Transfer(msg.sender, _to, _value);//呼叫event
+            emit Transfer(msg.sender, _to, _value); //呼叫event
             return true;
         } else { return false; }
     }
@@ -106,15 +103,6 @@ contract StandardToken is SafeMath {
     uint256 public totalSupply;
 }
 
-
-
-
-
-
-
-
-
-
 /*******************************************************************************
  *
  * Artchain Token  智能合约.
@@ -139,7 +127,6 @@ contract ArtChainToken is StandardToken {
     // 我们的 token 的总共的数量 (不用在意 *10**uint(decimals))
     uint256 public totalSupply = 3500000000*10**uint(decimals); // 35亿
 
-
     // founder账户 - 地址可以更改
     address public founder = 0x3b7ca9550a641B2bf2c60A0AeFbf1eA48891e58b;
     // 部署该合约时，founder_token = founder
@@ -147,7 +134,6 @@ contract ArtChainToken is StandardToken {
     // 更改 founder 地址， token 将保留在 founder_token 地址的中，不会被转移
     // 该 founder_token 的地址在合约部署后将不能被更改，该地址下的token只能按照既定的规则释放
     address public constant founder_token = 0x3b7ca9550a641B2bf2c60A0AeFbf1eA48891e58b;// founder_token=founder;
-
 
     // 激励团队poi账户 - 地址可以更改
     address public poi = 0x98d95A8178ff41834773D3D270907942F5BE581e;
@@ -157,10 +143,8 @@ contract ArtChainToken is StandardToken {
     // 该 poi_token 的地址在合约部署后将不能被更改， 该地址下的token只能按照既定的规则释放
     address public constant poi_token = 0x98d95A8178ff41834773D3D270907942F5BE581e; // poi_token=poi
 
-
     // 用于私募的账户, 合约部署后不可更改，但是 token 可以随意转移 没有限制
     address public constant privateSale = 0x31F2F3361e929192aB2558b95485329494955aC4;
-
 
     // 用于冷冻账户转账/交易
     // 大概每14秒产生一个block， 根据block的数量， 确定冷冻的时间，
@@ -171,15 +155,13 @@ contract ArtChainToken is StandardToken {
     // 用于 暂停交易， 只能 founder 账户 才可以更改这个状态
     bool public halted = false;
 
-
-
     /*******************************************************************
      *
      *  部署合约的 主体
      *
      *******************************************************************/
-    function ArtChainToken() public {
-    //constructor() public {
+    //function ArtChainToken() public {
+    constructor() public {
 
         // 部署该合约的时候  startBlock等于最新的 block的数量
         startBlock = block.number;
@@ -194,7 +176,6 @@ contract ArtChainToken is StandardToken {
         balances[privateSale] = 1400000000*10**uint(decimals); // 14亿
     }
 
-
     /*******************************************************************
      *
      *  紧急停止所有交易， 只能 founder 账户可以运行
@@ -205,12 +186,12 @@ contract ArtChainToken is StandardToken {
         halted = true;
         return true;
     }
+
     function unhalt() public returns (bool success) {
         if (msg.sender!=founder) return false;
         halted = false;
         return true;
     }
-
 
     /*******************************************************************
      *
@@ -225,15 +206,13 @@ contract ArtChainToken is StandardToken {
         founder = newFounder;
         return true;
     }
+    
     function changePOI(address newPOI) public returns (bool success){
         // 只有 "现founder" 可以更改 poi的地址
         if (msg.sender!=founder) return false;
         poi = newPOI;
         return true;
     }
-
-
-
 
     /********************************************************
      *
@@ -310,14 +289,6 @@ contract ArtChainToken is StandardToken {
         return super.transferFrom(_from, _to, _value);
     }
 
-
-
-
-
-
-
-
-
     /***********************************************************、、
      *
      * 销毁 自己账户内的 tokens
@@ -354,9 +325,6 @@ contract ArtChainToken is StandardToken {
 
     }
 
-
-
-
     /***********************************************************、、
      *
      * 销毁 别人账户内的 tokens
@@ -375,14 +343,12 @@ contract ArtChainToken is StandardToken {
       // founder_token 中的 token， 不可以被销毁
       if (_from==founder_token) return false;
 
-
       //如果 该账户 不足 输入的 token 数量， 终止交易
       if (balances[_from] < _value) return false;
       //如果 该账户 给这个 msg.sender 的权限不足 输入的 token 数量， 终止交易
       if (allowed[_from][msg.sender] < _value) return false;
       //如果 要销毁的 _value 是负数， 终止交易
       if (balances[_from] - _value > balances[_from]) return false;
-
 
       // 除了以上的 情况， 下面进行 销毁过程
 
@@ -394,7 +360,6 @@ contract ArtChainToken is StandardToken {
       totalSupply = super.safeSub(totalSupply, _value);
 
       emit Burn(_from, _value); //呼叫 event
-
       return true;
   }
 }

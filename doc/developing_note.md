@@ -624,6 +624,7 @@ Truffle 提供了一个清洁的沙箱测试环境. 当测试环境连接本地 
 - re-enttry issue? should we move from state variable to a local memory variable?
 - If A transfer to B, then how could B consume >2300 gas to get the call stuck?
 - 当某个交易正处在挖矿过程中时状态不能确定，矿工可以在交易挖矿过程中控制执行时间
+- 如何判断无符号数的正负? 现在的代码中，是通过A-B>A来判断B的正负。为什么不能直接把B转换成符号数然后判断？
 
 ### To-do
 
