@@ -1,2 +1,2 @@
 # ChainCode
-QIN WANG &amp; XUECHAO YANG
+QIN WANG, Lin Yang, and Van Cuong Bui
