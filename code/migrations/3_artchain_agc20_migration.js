@@ -1,5 +1,5 @@
-var artchain_acg20 = artifacts.require("artchain_acg20");
+var ACG20COIN = artifacts.require("ACG20");
 
 module.exports = function(deployer) {
-  deployer.deploy(artchain_acg20);
+  deployer.deploy(ACG20COIN);
 };
