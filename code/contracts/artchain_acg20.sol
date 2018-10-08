@@ -145,7 +145,7 @@ contract ACG20 is StandardERC20 {
 
     string public name = "ArtChain Global Token 20";
     string public symbol = "ACG20";
-    uint8 public decimals = 8;
+    uint8 public decimals = 2;
 
     // ---------------------------------------------------------
 
@@ -180,6 +180,11 @@ contract ACG20 is StandardERC20 {
         owner = newOwner;
     }
 
+    /**
+	* @dev Allows the user's balance as well as the total supply to be increated.
+    * @param _to address The address which you want to increase the balance
+	* @param _amount uint256 the amount of tokens to be increased
+	*/
     function mint(address _to, uint256 _amount) public onlyOwner returns (bool) {
         totalSupply = totalSupply.add(_amount);
         balances[_to] = balances[_to].add(_amount);
