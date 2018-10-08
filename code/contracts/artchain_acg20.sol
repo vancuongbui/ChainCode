@@ -73,7 +73,7 @@ contract StandardERC20 {
 	*/
     function balanceOf(address tokenOwner) public view returns (uint256 balance) {
         return balances[tokenOwner];
-    }	
+    }
 
 	/**
 	* @dev transfer token for a specified address
@@ -153,6 +153,7 @@ contract ACG20 is StandardERC20 {
   
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Mint(address indexed to, uint256 amount);
+    event Burn(address indexed to, uint256 amount);
 
 	/**
 	* @dev Throws if called by any account other than the owner.
@@ -192,4 +193,26 @@ contract ACG20 is StandardERC20 {
         emit Transfer(address(0), _to, _amount);
         return true;
     }
+
+    /**
+	* @dev Destroy user's token and decrease the total supply as well.
+	* @param _amount uint256 the amount of tokens to be destroyed
+	*/
+    function burn(uint256 _amount) public returns (bool) {
+        require(balances[msg.sender] >= _amount, "Burned amount exceeds user balance");
+        totalSupply = totalSupply.sub(_amount);
+        balances[msg.sender] = balances[msg.sender].sub(_amount);
+        emit Burn(msg.sender, _amount);
+        return true;
+    }
+
+    /**
+	* @dev Freeze given amount of tokens for the auction.
+	* @param _amount uint256 the amount of tokens to be destroyed
+    * @param _amount uint256 the amount of tokens to be destroyed
+	*/
+    function freeze(uint256 _artworkId, uint256 _amount) public onlyOwner returns (bool) {
+        
+    }
+
 }
