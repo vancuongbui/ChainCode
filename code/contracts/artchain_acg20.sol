@@ -147,19 +147,40 @@ contract ACG20 is StandardERC20 {
     string public symbol = "ACG20";
     uint8 public decimals = 2;
 
-    // ---------------------------------------------------------
-
     address public owner;
+
+    // artwork ID => highest bidder address
+    mapping(uint256 => address) highestBidder;
+    // artwork ID => highest bid
+    mapping(uint256 => uint256) highestBid;
   
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Mint(address indexed to, uint256 amount);
     event Burn(address indexed to, uint256 amount);
+    event NewBid(address indexed from, uint256 amount, uint256 artwork);
 
 	/**
 	* @dev Throws if called by any account other than the owner.
 	*/
     modifier onlyOwner() {
         require(msg.sender == owner, "Only contract owner is permitted for the operation");
+        _;
+    }
+
+    /**
+	* @dev Check if the transfer is the payment of an auction. Throws if:
+    * - sdfds
+    * - sdfsd
+	*/
+    modifier isForAuction(address _from, uint256 _value, uint256 _artworkId) {
+        if (_from == highestBidder[_artworkId]) {
+            require (_value == highestBid[_artworkId], "Payment for the auction is different from the final bid");
+            // Withdraw the frozen tokesn to bidder's account
+            balances[_from] = balances[_from].add(highestBid[_artworkId]);
+            // Reset bid and bidder
+            highestBidder[_artworkId] = address(0);
+            highestBid[_artworkId] = 0;
+        }
         _;
     }
 
@@ -211,8 +232,46 @@ contract ACG20 is StandardERC20 {
 	* @param _amount uint256 the amount of tokens to be destroyed
     * @param _amount uint256 the amount of tokens to be destroyed
 	*/
-    function freeze(uint256 _artworkId, uint256 _amount) public onlyOwner returns (bool) {
-        
+    function freeze(address _from, uint256 _amount, uint256 _artworkId) public onlyOwner returns (bool) {
+        require(highestBid[_artworkId] < _amount, "Invalid operation: new bid should be greater than previous");
+
+        address prevBidder = highestBidder[_artworkId];
+        uint256 prevBid = highestBid[_artworkId];
+
+        // First withdraw the frozen tokens to previous bidder's account
+        balances[prevBidder] = balances[prevBidder].add(prevBid);
+
+        // The balance of new bidder should be greater than the bid
+        require(balances[_from] >= _amount, "User's bid amount exceeds his balance");
+
+        // Freeze tokens from the account of the new bidder
+        balances[_from] = balances[_from].sub(_amount);
+
+        // Update bid and bidder
+        highestBidder[_artworkId] = _from;
+        highestBid[_artworkId] = _amount;
+
+        emit NewBid(_from, _amount, _artworkId);
     }
 
+    /**
+	* @dev transfer token for a specified address (support auction)
+	* @param _to The address to transfer to.
+	* @param _value The amount to be transferred.
+    * @param _artworkId The ID of artwork which the transfer is for
+	*/
+    function transfer(address _to, uint256 _value, uint256 _artworkId) public isForAuction(msg.sender, _value, _artworkId) returns (bool) {
+        return super.transfer(_to, _value);
+    }
+
+    /**
+	* @dev Transfer tokens from one address to another (support auction)
+	* @param _from address The address which you want to send tokens from
+	* @param _to address The address which you want to transfer to
+	* @param _value uint256 the amount of tokens to be transferred
+    * @param _artworkId The ID of artwork which the transfer is for
+	*/
+    function transferFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public isForAuction(_from, _value, _artworkId) returns (bool) {
+        return super.transferFrom(_from, _to, _value);
+    }
 }
