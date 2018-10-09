@@ -1,3 +1,5 @@
+const expectThrow = require("../helpers/expectThrow.js")
+
 var ACG20COIN = artifacts.require("ACG20");
 
 contract('Support of API add_new_user()', function(accounts) {
@@ -135,13 +137,24 @@ contract('Support of API freeze_token()', function(accounts) {
     assert.equal(bidder, accounts[2], "bidder should be user 2");
     assert.equal(bid.toNumber(), bid_artwork2, "bid should be 2000")
   });
+  it("At the end of auction, buyer's price should match highest bid", async () => {
+    let frozen_amount_for_artwork2 = 2e3;
+    let wrong_price = frozen_amount_for_artwork2+1;
+    await expectThrow(acg20Inst.transfer(accounts[4], wrong_price, artwork2, {from:accounts[2]}), "Exception: transfer value is mismatching with auction price");
+  });
+  it("If contract operation throws exception, all change should be rewinded", async () => {
+    let expectedBalance = 3e3;
+    let user2Balance = await acg20Inst.balanceOf.call(accounts[2]);
+    assert.equal(user2Balance.toNumber(), expectedBalance, "User's balance shall not change if an expection is throw from contract");
+  });
   it("At the end of auction, user's balance will be reduced by the final price", async () => {
     let frozen_amount_for_artwork1 = 5e3;
     let frozen_amount_for_artwork2 = 2e3;
     let new_frozen_for_artwork2 = 3e3;
 
     // end of the auction
-    await acg20Inst.transfer(accounts[4], frozen_amount_for_artwork2, artwork2, {from:accounts[2]});
+    //await acg20Inst.transfer(accounts[4], frozen_amount_for_artwork2, artwork2, {from:accounts[2]});
+    await acg20Inst.transfer(accounts[4], frozen_amount_for_artwork2, artwork2, {from:accounts[2]}), "Exception: transfer value is mismatching with auction price";
 
     // a new auction starts on the same artwork (should not appear), it won't affect previous bidder's balance
     await acg20Inst.freeze(accounts[3], new_frozen_for_artwork2, artwork2, {from: admin});
