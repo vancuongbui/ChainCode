@@ -1,0 +1,33 @@
+{
+  "name": "ethereum-app",
+  "version": "1.0.1",
+  "description": "Ether-based Application",
+  "main": "keys.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vancuongbui/ethereum-app.git"
+  },
+  "keywords": [
+    "ethereum",
+    "ether",
+    "smart-contract",
+    "blockchain"
+  ],
+  "author": "Cuong Bui",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vancuongbui/ethereum-app/issues"
+  },
+  "homepage": "https://github.com/vancuongbui/ethereum-app#readme",
+  "dependencies": {
+    "ganache-cli": "^6.1.8",
+    "mocha": "^5.2.0",
+    "solc": "^0.4.25",
+    "truffle": "^4.1.14",
+    "truffle-hdwallet-provider": "0.0.6",
+    "web3": "^1.0.0-beta.36"
+  }
+}
