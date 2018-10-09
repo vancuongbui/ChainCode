@@ -600,6 +600,70 @@ All test code should be placed under *./test* folder, and ended with extension n
 
 Truffle 提供了一个清洁的沙箱测试环境. 当测试环境连接本地 Ganache 或者 Truffle 开发环境 (truffle develop), Truffle 将使用高级的快照特性, 保证每个测试的环境并不相互影响. 当使用其他客户端, 例如 go-ethereum 的时候, Truffle 将会在运行每个测试文件之前重新部署所有部署合约, 以便保证有一个全新的合约用于测试.
 
+### operate the smart contract with web3.js
+
+#### Access a deployed contract
+
+1. Use geth.
+
+Refer to [Interacting with a Smart Contract through Web3.js (Tutorial)][26]
+
+Make sure geth is connected to the chain. First we need to know the ABI by using `solc <your source file>.sol --abi`. And we need also know the contract address. Then we can access the contract in following way:
+
+```javascript
+eth.defaultAccount = eth.accounts[0];
+var ContractABI = eth.contract(PASTE ABI HERE);
+var Contract = ContractABI.at(PASTE CONTRACT ADDRESS HERE)
+```
+
+If we use truffle, we have another way to get ABI:
+
+```javascript
+const fs = require('fs')
+const contract = JSON.parse(fs.readFileSync('./build/contracts/MetaCoin.json', 'utf8'));
+console.log(JSON.stringify(contract.abi))
+```
+
+Now you get your contract instance and are able to interact with it, for example `Contract.f(xxx)`
+
+## Development
+
+### About the auction
+
+1. start auction
+Call change_artwork_status(): mark artwork to be auctioned
+
+Question:
+- how to cancel the frozen status?
+- how to cancel the auction - not same question with above.
+
+### ERC20
+
+Question:
+1. how to withdraw?
+2. We need still set a upperbound of total supply for test.
+
+
+### ACG20
+
+Requirement:
+
+- no upper bound of total supply
+- has administrator
+- for auction, need to know the frozen amount (different amount for different auction)
+  - so need have two index?
+
+- API (add new user): save a new address, with initial balance of 0
+- API (post new artwork): require the user is existing; set prize
+- API (buy artwirk): transfer from buyer to saler
+- API (buy token): add user's balance, and total supply as well.
+- API (freeze token): freeze token
+- API (check artwork): nothing
+- API (check user): check user balance
+- API (check transaction): nothing to do
+
+### ACG721
+
 ## Study materials
 
 ### Code exercise
@@ -683,6 +747,15 @@ The requirement is not 100 super-nodes, is 100 pre-fund nodes. The super nodes a
   - check_transaction
 - deployment
 
+### Worklog
+
+8/Oct:
+Morning: discuss auction
+Afternoon: coding acg20
+9/Oct:
+Morning: coding acg20: auction 
+Afternoon: add acg20 unittest; acg721 first version
+
 ### Meeting minutes
 
 #### 1/Oct/2018
@@ -716,3 +789,4 @@ The requirement is not 100 super-nodes, is 100 pre-fund nodes. The super nodes a
 [23]: https://github.com/fravoll/solidity-patterns
 [24]: https://solidity.readthedocs.io/en/develop/index.html
 [25]: https://github.com/OpenZeppelin/openzeppelin-solidity
+[26]: https://coursetro.com/posts/code/99/Interacting-with-a-Smart-Contract-through-Web3.js-(Tutorial)
