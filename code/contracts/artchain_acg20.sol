@@ -150,9 +150,9 @@ contract ACG20 is StandardERC20 {
     address public owner;
 
     // artwork ID => highest bidder address
-    mapping(uint256 => address) highestBidder;
+    mapping(uint256 => address) public highestBidder;
     // artwork ID => highest bid
-    mapping(uint256 => uint256) highestBid;
+    mapping(uint256 => uint256) public highestBid;
   
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Mint(address indexed to, uint256 amount);

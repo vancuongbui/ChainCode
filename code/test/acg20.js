@@ -20,7 +20,7 @@ contract('Support of API add_new_user()', function(accounts) {
 
 contract('Support of API post_new_artwork()', function(accounts) {
   // need to nothing
-})
+});
 
 contract('Support of API buy_token()', function(accounts) {
   let acg20Inst;
@@ -37,7 +37,7 @@ contract('Support of API buy_token()', function(accounts) {
     let totalSupply = await acg20Inst.totalSupply.call();
     assert.equal(totalSupply.toNumber(), 100, "Total supply increased to 100")
   });
-})
+});
 
 contract('Support of API buy_artwork()', function(accounts) {
   let acg20Inst;
@@ -56,7 +56,7 @@ contract('Support of API buy_artwork()', function(accounts) {
     assert.equal(totalSupply.toNumber(), 300, "Total supply should be 300");
   });
   it("transfer money from user 0 to user 1.", async () => {
-    await acg20Inst.transfer(user1, 100, {from: user0});
+    await acg20Inst.transfer(user1, 100, 0, {from: user0});
     let getUser0Balance = acg20Inst.balanceOf.call(user0);
     let getUser1Balance = acg20Inst.balanceOf.call(user1);
     let getTotalBalance = acg20Inst.totalSupply.call();
@@ -68,20 +68,97 @@ contract('Support of API buy_artwork()', function(accounts) {
     assert.equal(user0Balance.toNumber(), 0, "Balance of user 0 is 0");
     assert.equal(user1Balance.toNumber(), 300, "Balance of user 1 is 300");
   });
-})
+});
 
 contract('Support of API freeze_token()', function(accounts) {
-  // 
-})
+
+  let acg20Inst;
+  let admin;
+  let userInitBalance = 1e4;
+  let artwork1 = 0;
+  let artwork2 = 1;
+
+  before ( async () => {
+    acg20Inst = await ACG20COIN.deployed();
+
+    admin = accounts[0];
+    await acg20Inst.mint(admin, userInitBalance);
+    await acg20Inst.mint(accounts[1], userInitBalance);
+    await acg20Inst.mint(accounts[2], userInitBalance);
+    await acg20Inst.mint(accounts[3], userInitBalance);
+    await acg20Inst.mint(accounts[4], userInitBalance);
+  });
+  it("freeze() will reduce user balance but won't change total supply", async () => {
+    let frozen_amount = 1e3;
+    await acg20Inst.freeze(accounts[1], 1e3, artwork1, {from: admin});
+
+    let userBalance = await acg20Inst.balanceOf.call(accounts[1]);
+    assert.equal(userBalance.toNumber(), userInitBalance-frozen_amount, "User's balance should be reduced by frozen amount");
+
+    let totalSupply = await acg20Inst.totalSupply.call();
+    assert.equal(totalSupply.toNumber(), userInitBalance*5, "Total supply should not affected by freeze() operation");
+  });
+  it("If other user provides a higher bid, then token is unfrozen for previous bidder", async () => {
+    let higher_frozen_amount = 2e3;
+    await acg20Inst.freeze(accounts[2], higher_frozen_amount, artwork1, {from: admin});
+
+    let user1Balance = await acg20Inst.balanceOf.call(accounts[1]);
+    assert.equal(user1Balance.toNumber(), userInitBalance, "Frozen tokens should be withdrawn");
+  });
+  it("User can even provides higher bid than his own", async () => {
+    let even_higher_frozen_amount = 5e3;
+    await acg20Inst.freeze(accounts[2], even_higher_frozen_amount, artwork1, {from: admin});
+
+    let user2Balance = await acg20Inst.balanceOf.call(accounts[2]);
+    assert.equal(user2Balance.toNumber(), userInitBalance-even_higher_frozen_amount, "User's balance should be decreased by his highest bid");
+  });
+  it("User can bid for more than one artwork at the same time", async () => {
+    let frozen_amount_for_artwork2 = 2e3;
+    let even_higher_frozen_amount = 5e3;
+    await acg20Inst.freeze(accounts[2], frozen_amount_for_artwork2, artwork2, {from: admin});
+
+    let user2Balance = await acg20Inst.balanceOf.call(accounts[2]);
+    assert.equal(user2Balance.toNumber(), userInitBalance-even_higher_frozen_amount-frozen_amount_for_artwork2, "User's balance should be further decreased by his bid for another artwork");
+  });
+  it("During auction, check recorded bid price and bidder", async () => {
+    let bid_artwork1 = 5e3
+    let bid_artwork2 = 2e3;
+
+    let bidder = await acg20Inst.highestBidder.call(artwork1);
+    let bid = await acg20Inst.highestBid.call(artwork1);
+  
+    assert.equal(bidder, accounts[2], "bidder should be user 2");
+    assert.equal(bid.toNumber(), bid_artwork1, "bid should be 5000")
+
+    bidder = await acg20Inst.highestBidder.call(artwork2);
+    bid = await acg20Inst.highestBid.call(artwork2);
+    assert.equal(bidder, accounts[2], "bidder should be user 2");
+    assert.equal(bid.toNumber(), bid_artwork2, "bid should be 2000")
+  });
+  it("At the end of auction, user's balance will be reduced by the final price", async () => {
+    let frozen_amount_for_artwork1 = 5e3;
+    let frozen_amount_for_artwork2 = 2e3;
+    let new_frozen_for_artwork2 = 3e3;
+
+    // end of the auction
+    await acg20Inst.transfer(accounts[4], frozen_amount_for_artwork2, artwork2, {from:accounts[2]});
+
+    // a new auction starts on the same artwork (should not appear), it won't affect previous bidder's balance
+    await acg20Inst.freeze(accounts[3], new_frozen_for_artwork2, artwork2, {from: admin});
+
+    let user2Balance = await acg20Inst.balanceOf.call(accounts[2]);
+    assert.equal(user2Balance.toNumber(), userInitBalance-frozen_amount_for_artwork1-frozen_amount_for_artwork2, "User's balance should be decreased by final auction payment");
+  });
+});
 
 contract('Support of API check_artwork()', function(accounts) {
   // need to nothing
-})
+});
 
 contract('Support of API check_user()', function(accounts) {
   // need to nothing
-})
+});
 
 contract('Support of API check_transaction()', function(accounts) {
   // need to nothing
-})
+});
