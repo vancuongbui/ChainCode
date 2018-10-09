@@ -35,7 +35,6 @@ library SafeMath {
     }
 }
 
-
 /**
  * @title StandardERC20
  * @dev A one file ERC20 token for the 4th part of the Ethereum Development Walkthrough tutorial series
@@ -138,7 +137,7 @@ contract StandardERC20 {
 
 /**
  * @title ACG 20 Token
- * @dev ERC721 to support ArtChainGlobal system
+ * @dev ERC20 to support ArtChainGlobal system
  * 
  */
 contract ACG20 is StandardERC20 {
