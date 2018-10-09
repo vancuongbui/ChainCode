@@ -228,6 +228,21 @@ contract ACG20 is StandardERC20 {
     }
 
     /**
+	* @dev Destroy delegated user's token and decrease the total supply as well.
+	* @param _amount uint256 the amount of tokens to be destroyed
+	*/
+    function burnFrom(address _from, uint256 _amount) public returns (bool) {
+        require(balances[msg.sender] >= _amount, "Burned amount exceeds user balance");
+        require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds delegated value");
+
+        totalSupply = totalSupply.sub(_amount);
+        balances[_from] = balances[_from].sub(_amount);
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
+        emit Burn(_from, _amount);
+        return true;
+    }
+
+    /**
 	* @dev Freeze given amount of tokens for the auction.
 	* @param _amount uint256 the amount of tokens to be destroyed
     * @param _amount uint256 the amount of tokens to be destroyed
