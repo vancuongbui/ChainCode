@@ -2,7 +2,7 @@ const expectThrow = require("../helpers/expectThrow.js")
 
 var ACG20TOKEN = artifacts.require("ACG20");
 
-contract('Support of API add_new_user()', function(accounts) {
+contract('API Support: add_new_user()', function(accounts) {
   
   it("Add two new user with different initial balance", async function() {
     let acg20Inst = await ACG20TOKEN.deployed();
@@ -20,11 +20,11 @@ contract('Support of API add_new_user()', function(accounts) {
   })
 });
 
-contract('Support of API post_new_artwork()', function(accounts) {
+contract('API Support: post_new_artwork()', function(accounts) {
   // need to nothing
 });
 
-contract('Support of API buy_token()', function(accounts) {
+contract('API Support: buy_token()', function(accounts) {
   let acg20Inst;
   let contractOwner = accounts[0];
 
@@ -41,38 +41,84 @@ contract('Support of API buy_token()', function(accounts) {
   });
 });
 
-contract('Support of API buy_artwork()', function(accounts) {
+contract('API Support: buy_artwork()', function(accounts) {
   let acg20Inst;
-  let user0 = accounts[0];
-  let user1 = accounts[1];
+  let userInitBalance = 1e4;
+  let totalSupply = userInitBalance * accounts.length;
+  let userBalance = [];
 
-  it("test setup: add two users with initial balances", async () => {
+  before("Add two users with initial balances", async () => {
     acg20Inst = await ACG20TOKEN.deployed();
 
-    user0_mint = acg20Inst.mint(user0, 100);
-    user1_mint = acg20Inst.mint(user1, 200);
-    await user0_mint;
-    await user1_mint;
-
-    let totalSupply = await acg20Inst.totalSupply.call();
-    assert.equal(totalSupply.toNumber(), 300, "Total supply should be 300");
+    accounts.forEach(async (user) => {
+      await acg20Inst.mint(user, userInitBalance);
+    });
+    accounts.forEach( (user) => {
+      userBalance[user] = userInitBalance;
+    });
   });
-  it("transfer money from user 0 to user 1.", async () => {
-    await acg20Inst.transfer(user1, 100, 0, {from: user0});
-    let getUser0Balance = acg20Inst.balanceOf.call(user0);
-    let getUser1Balance = acg20Inst.balanceOf.call(user1);
-    let getTotalBalance = acg20Inst.totalSupply.call();
-    let user0Balance = await getUser0Balance;
-    let user1Balance = await getUser1Balance;
-    let totalSupply = await getTotalBalance;
+  it("transfer money from one user to another", async () => {
+    let sender = accounts[0];
+    let receiver = accounts[1];
+    let transferAmout = 1e3;
+    let artworkId = 0;
 
-    assert.equal(totalSupply.toNumber(), 300, "Total supply should not change");
-    assert.equal(user0Balance.toNumber(), 0, "Balance of user 0 is 0");
-    assert.equal(user1Balance.toNumber(), 300, "Balance of user 1 is 300");
+    await acg20Inst.transfer(receiver, transferAmout, artworkId, {from: sender});
+    userBalance[sender] -= transferAmout;
+    userBalance[receiver] += transferAmout;
+
+    let senderBalanceValue = await acg20Inst.balanceOf.call(sender);
+    let recverBalanceValue = await acg20Inst.balanceOf.call(receiver);
+    let totalSupplyValue = await acg20Inst.totalSupply.call();
+
+    assert.equal(totalSupplyValue.toNumber(), totalSupply, "Total supply should not change");
+    assert.equal(senderBalanceValue.toNumber(), userBalance[sender], "Balance of sender is decreased");
+    assert.equal(recverBalanceValue.toNumber(), userBalance[receiver], "Balance of receiver is increased");
+  });
+  it("User can grant amount of tokens to another user", async () => {
+    let owner = accounts[3];
+    let spender = accounts[4];
+    let approvedAmount = 5e3;
+
+    await acg20Inst.approve(spender, approvedAmount, {from:owner});
+
+    let approvedValue = await acg20Inst.allowance.call(owner, spender);
+    assert.equal(approvedValue.toNumber(), approvedAmount, "Spender received expected amount");
+
+    let ownerBalance = await acg20Inst.balanceOf.call(owner);
+    assert(ownerBalance.toNumber(), userBalance[owner], "Owner's balance should not be affected by approval operation");
+  });
+  it("Owner could ask a delegator to transfer his tokens", async () => {
+    let owner = accounts[3];
+    let spender = accounts[4];
+    let receiver = accounts[5];
+    let artworkId = 0;
+    
+    // Record status before transfer operation
+    let approvedAmount = await acg20Inst.allowance.call(owner, spender).then((value) => {
+      return value.toNumber();
+    });
+    let transferAmount = approvedAmount/2;
+
+    // Submit transfer operation
+    await acg20Inst.transferFrom(owner, receiver, transferAmount, artworkId, {from:spender});
+    //(owner, receiver, transferAmount, artworkId);
+    approvedAmount -= transferAmount;
+    userBalance[owner] -= transferAmount;
+    userBalance[receiver] += transferAmount;
+
+    // Record status after transfer operation
+    let approvedAfter = await acg20Inst.allowance.call(owner, spender);
+    let ownerBalanceAfter = await acg20Inst.balanceOf.call(owner);
+    let receiverBalanceAfter = await acg20Inst.balanceOf.call(receiver);
+
+    assert.equal(approvedAfter.toNumber(), approvedAmount, "Approved amount reduced by transfer operation");
+    assert.equal(ownerBalanceAfter.toNumber(), userBalance[owner], "Owner's balanced is reduced by transfer operation");
+    assert.equal(receiverBalanceAfter.toNumber(), userBalance[receiver], "Receiver's balance is increased by transfer operation");
   });
 });
 
-contract('Support of API freeze_token()', function(accounts) {
+contract('API Support: freeze_token()', function(accounts) {
 
   let acg20Inst;
   let admin;
@@ -164,14 +210,88 @@ contract('Support of API freeze_token()', function(accounts) {
   });
 });
 
-contract('Support of API check_artwork()', function(accounts) {
+contract('API Support: check_artwork()', function(accounts) {
   // need to nothing
 });
 
-contract('Support of API check_user()', function(accounts) {
+contract('API Support: check_user()', function(accounts) {
   // need to nothing
 });
 
-contract('Support of API check_transaction()', function(accounts) {
+contract('API Support: check_transaction()', function(accounts) {
   // need to nothing
+});
+
+contract('Code dev: burn() and burnFrom()', function(accounts) {
+  let acg20Inst;
+  let userInitBalance = 1e4;
+  let userBalance = new Array;
+
+  before ( async () => {
+    acg20Inst = await ACG20TOKEN.deployed();
+    accounts.forEach(async (user, index) => {
+      await acg20Inst.mint(user, userInitBalance);
+    });
+    for (let index=0; index<accounts.length; index++) {
+      userBalance[index] = userInitBalance;
+    }
+  });
+  it("User should destroy any amount of tokens under his balance", async () => {
+    let burnedAmount = 100;
+    userBalance[0] = userBalance[0] - burnedAmount;
+    await acg20Inst.burn(burnedAmount, {from:accounts[0]});
+    let balance = await acg20Inst.balanceOf(accounts[0]);
+    assert.equal(balance.toNumber(), userBalance[0], "Some tokesn are burned");
+  });
+  it("User should not destroy tokesn amount more than this balance", async () => {
+    await expectThrow(acg20Inst.burn(userBalance[0]+1, {from: userBalance[0]}), "Burned amount exceeds account balance");
+  });
+  it("User can grants amout of tokens to a delegator", async () => {
+    let owner = accounts[1];
+    let expectedBalance = userBalance[1];
+    let spender = accounts[2];
+    let grantedToken = 2e3;
+    
+    await acg20Inst.approve(spender, grantedToken, {from:owner});
+    let balance = await acg20Inst.balanceOf(owner);
+    let allowToken = await acg20Inst.allowance(owner, spender);
+
+    assert.equal(allowToken, grantedToken, "Allowed amount of token should be equal to the granted amount");
+    assert.equal(balance, expectedBalance, "Approval action should have no effect to user's balance");
+  });
+  it("After user grants amount of tokens to a delegator, delegator could destroy the granted part", async () => {
+    let grantedToken = 2e3;
+    let owner = accounts[1];
+    let ownerBalance = userBalance[1];
+
+    let spender = accounts[2];
+    await acg20Inst.burnFrom(owner, grantedToken, {from:spender});
+    ownerBalance = ownerBalance - grantedToken;
+
+    let balance = await acg20Inst.balanceOf.call(owner);
+    assert.equal(balance, ownerBalance, "Owner's token shoud be burned by approver")
+  });
+});
+
+contract('Code dev: transferOwnerShip', function(accounts) {
+  let acg20Inst;
+  let owner, newOwner;
+
+  before ( async () => {
+    acg20Inst = await ACG20TOKEN.deployed();
+    owner = accounts[0];
+    newOwner = accounts[1];
+  });
+  it("After contract deployement, the owner should be who created the contract", async () => {
+    let ownerValue = await acg20Inst.owner.call();
+    assert.equal(ownerValue, owner, "Expected owner address");
+  });
+  it("Ownership could not be transferred to an zero address", async () => {
+    await expectThrow(acg20Inst.transferOwnership(0), "Transferring ownership to zero address will throw an exception");
+  });
+  it("Ownership could be transferred to a valid user", async () => {
+    await acg20Inst.transferOwnership(newOwner, {from:owner});
+    let ownerValue = await acg20Inst.owner.call();
+    assert.equal(ownerValue, newOwner, "Expected new owner address");
+  });
 });

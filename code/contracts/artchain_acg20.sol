@@ -80,7 +80,7 @@ contract StandardERC20 {
 	* @param _value The amount to be transferred.
 	*/
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0), "Receiver must have a non-sero address");
+        require(_to != address(0), "Receiver must have a non-zero address");
         require(_value <= balances[msg.sender], "Sender's balance must be larger than transferred amount");
 
         // SafeMath.sub will throw if there is not enough balance.
@@ -96,7 +96,7 @@ contract StandardERC20 {
 	* @param _to address The address which you want to transfer to
 	* @param _value uint256 the amount of tokens to be transferred
 	*/
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom1(address _from, address _to, uint256 _value) public returns (bool) {
         require(_to != address(0), "Receiver must have a non-sero address");
         require(_value <= balances[_from], "Sender's balance must be larger than transferred amount");
         require(_value <= allowed[_from][msg.sender], "Sender must have approved larger amount to the delegator");
@@ -232,7 +232,7 @@ contract ACG20 is StandardERC20 {
 	*/
     function burnFrom(address _from, uint256 _amount) public returns (bool) {
         require(balances[_from] >= _amount, "Burned amount exceeds user balance");
-        require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds delegated value");
+        require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds granted value");
 
         totalSupply = totalSupply.sub(_amount);
         balances[_from] = balances[_from].sub(_amount);
@@ -286,6 +286,6 @@ contract ACG20 is StandardERC20 {
     * @param _artworkId The ID of artwork which the transfer is for
 	*/
     function transferFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public isForAuction(_from, _value, _artworkId) returns (bool) {
-        return super.transferFrom(_from, _to, _value);
+        return super.transferFrom1(_from, _to, _value);
     }
 }
