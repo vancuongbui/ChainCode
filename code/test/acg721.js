@@ -2,7 +2,7 @@ const expectThrow = require("../helpers/expectThrow.js")
 
 var ACG721TOKEN = artifacts.require("ACG721");
 
-contract('Support of API add_new_user()', function(accounts) {
+contract('API Support: add_new_user()', function(accounts) {
 
   let acg721Inst;
 
@@ -19,7 +19,7 @@ contract('Support of API add_new_user()', function(accounts) {
   });
 });
 
-contract('Support of API post_new_artwork()', function(accounts) {
+contract('API Support: post_new_artwork()', function(accounts) {
     
   let acg721Inst;
   let artwork1, artwork2;
@@ -61,7 +61,7 @@ contract('Support of API post_new_artwork()', function(accounts) {
     assert.equal(userBalance.toNumber(), 1, "User should have 1 artwork token");
   });
 });
-contract('Support of API buy_artwork()', function(accounts) {
+contract('API Support: buy_artwork()', function(accounts) {
   let acg721Inst;
   let artwork1, artwork2;
 
@@ -102,15 +102,15 @@ contract('Support of API buy_artwork()', function(accounts) {
     await expectThrow(acg721Inst.transfer(accounts[0], 0, {from:accounts[1]}), "Selling an non-existent artworing should fail");
   });
 });
-contract('Support of API buy_token()', function(accounts) {
+contract('API Support: buy_token()', function(accounts) {
   // do nothing
 });
 
-contract('Support of API freeze_token()', function(accounts) {
+contract('API Support: freeze_token()', function(accounts) {
   // need to nothing
 });
 
-contract('Support of API check_artwork()', function(accounts) {
+contract('API Support: check_artwork()', function(accounts) {
   let acg721Inst;
   let artwork1;
 
@@ -144,10 +144,57 @@ contract('Support of API check_artwork()', function(accounts) {
   });
 });
 
-contract('Support of API check_user()', function(accounts) {
+contract('API Support: check_user()', function(accounts) {
   // need to nothing
 });
 
-contract('Support of API check_transaction()', function(accounts) {
+contract('API Support: check_transaction()', function(accounts) {
   // need to nothing
 });
+
+contract('API Support: check_transaction()', function(accounts) {
+  // need to nothing
+});
+
+contract('Code dev: approve() and transferFrom()', function(accounts) {
+  let acg721Inst;
+  let artwork1, artwork2;
+
+  before(async() => {
+    acg721Inst = await ACG721TOKEN.deployed();
+    artwork1 = {
+      "type":"paint",
+      "artist":"Qin Wang",
+      "loyalty":"0.1",
+      "status":"normal",
+      "prize":"10000"
+    };
+    artwork2 = {
+      "type":"sculpture",
+      "artist":"Quong Bui Van",
+      "loyalty":"0.3",
+      "status":"normal",
+      "prize":"50000"
+    };
+    await acg721Inst.mintWithMetadata(accounts[1], 1, JSON.stringify(artwork1));
+    await acg721Inst.mintWithMetadata(accounts[2], 2, JSON.stringify(artwork2));
+  });
+  it("User grants other user to take possession of his artwork", async function() {
+    await acg721Inst.approve(accounts[0], 1, {from: accounts[1]});
+    await acg721Inst.approve(accounts[0], 2, {from: accounts[2]});
+  });
+  it("User should not grants an artwork not belonging to him", async function() {
+    await expectThrow(acg721Inst.approve(accounts[3], 2, {from: accounts[1]}));
+  });
+  it("Granted user should be able to sell the artwork to others", async function() {
+    await acg721Inst.transferFrom(accounts[1], accounts[3], 1, {from: accounts[0]});
+    await acg721Inst.transferFrom(accounts[2], accounts[3], 2, {from: accounts[0]});
+
+    let owner = await acg721Inst.ownerOf(1);
+    assert.equal(owner, accounts[3], "Artwork is sold by approved user");
+    owner = await acg721Inst.ownerOf(2);
+    assert.equal(owner, accounts[3], "Artwork is sold by approved user");
+  });
+});
+
+

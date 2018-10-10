@@ -310,6 +310,20 @@ npm install ganache-cli -g
 
 Alternatively, download Ganache GUI app from its [website][14].
 
+#### Solitity-Coverage
+
+Under your truffle project folder, run:
+
+```shell
+CXX=clang++ npm install --save-dev solidity-coverage
+```
+
+And run the binary by:
+
+```shell
+./node_modules/.bin/solidity-coverage
+```
+
 ## Environment setup
 
 ### test the contracts on testnet
