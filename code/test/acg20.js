@@ -1,11 +1,11 @@
 const expectThrow = require("../helpers/expectThrow.js")
 
-var ACG20COIN = artifacts.require("ACG20");
+var ACG20TOKEN = artifacts.require("ACG20");
 
 contract('Support of API add_new_user()', function(accounts) {
   
   it("Add two new user with different initial balance", async function() {
-    let acg20Inst = await ACG20COIN.deployed();
+    let acg20Inst = await ACG20TOKEN.deployed();
     let user0 = accounts[0];
     let user1 = accounts[1];
 
@@ -29,7 +29,7 @@ contract('Support of API buy_token()', function(accounts) {
   let contractOwner = accounts[0];
 
   it("Initial total supply should be zero", async () => {
-    acg20Inst = await ACG20COIN.deployed();
+    acg20Inst = await ACG20TOKEN.deployed();
 
     let totalSupply = await acg20Inst.totalSupply.call();
     assert.equal(totalSupply.toNumber(), 0, "Initial otal supply should be 0")
@@ -47,7 +47,7 @@ contract('Support of API buy_artwork()', function(accounts) {
   let user1 = accounts[1];
 
   it("test setup: add two users with initial balances", async () => {
-    acg20Inst = await ACG20COIN.deployed();
+    acg20Inst = await ACG20TOKEN.deployed();
 
     user0_mint = acg20Inst.mint(user0, 100);
     user1_mint = acg20Inst.mint(user1, 200);
@@ -81,7 +81,7 @@ contract('Support of API freeze_token()', function(accounts) {
   let artwork2 = 1;
 
   before ( async () => {
-    acg20Inst = await ACG20COIN.deployed();
+    acg20Inst = await ACG20TOKEN.deployed();
 
     admin = accounts[0];
     await acg20Inst.mint(admin, userInitBalance);
