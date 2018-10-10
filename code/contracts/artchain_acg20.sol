@@ -231,7 +231,7 @@ contract ACG20 is StandardERC20 {
 	* @param _amount uint256 the amount of tokens to be destroyed
 	*/
     function burnFrom(address _from, uint256 _amount) public returns (bool) {
-        require(balances[msg.sender] >= _amount, "Burned amount exceeds user balance");
+        require(balances[_from] >= _amount, "Burned amount exceeds user balance");
         require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds delegated value");
 
         totalSupply = totalSupply.sub(_amount);
