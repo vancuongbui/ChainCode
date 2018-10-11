@@ -102,7 +102,7 @@ contract('API Support: buy_artwork()', function(accounts) {
 
     // Submit transfer operation
     await acg20Inst.transferFrom(owner, receiver, transferAmount, artworkId, {from:spender});
-    
+
     approvedAmount -= transferAmount;
     userBalance[owner] -= transferAmount;
     userBalance[receiver] += transferAmount;
