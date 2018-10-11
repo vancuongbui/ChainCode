@@ -1,1 +1,1 @@
-[code coverage][./code/coverage/index.html]
+[code coverage](./code/coverage/index.html)
