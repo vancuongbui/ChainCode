@@ -89,7 +89,7 @@ contract('API Support: buy_artwork()', function(accounts) {
     let transferAmout = 1e3;
     let artworkId = 0;
 
-    await acg20Inst.transfer(receiver, transferAmout, artworkId, {from: sender});
+    await acg20Inst.payForArtwork(receiver, transferAmout, artworkId, {from: sender});
     userBalance[sender] -= transferAmout;
     userBalance[receiver] += transferAmout;
 
@@ -127,7 +127,7 @@ contract('API Support: buy_artwork()', function(accounts) {
     let transferAmount = approvedAmount/2;
 
     // Submit transfer operation
-    await acg20Inst.transferFrom(owner, receiver, transferAmount, artworkId, {from:spender});
+    await acg20Inst.payForArtworkFrom(owner, receiver, transferAmount, artworkId, {from:spender});
 
     approvedAmount -= transferAmount;
     userBalance[owner] -= transferAmount;
@@ -241,7 +241,7 @@ contract('API Support: freeze_token()', function(accounts) {
   });
   it("Bidder's payment should match his bid, or an expection would be thrown out", async () => {
     let wrongPrice = bidForArt2+1;
-    await expectThrow(acg20Inst.transfer(artist, wrongPrice, artwork2, {from:bidderForArt2}), "Exception: transfer value is mismatching with auction price");
+    await expectThrow(acg20Inst.payForArtwork(artist, wrongPrice, artwork2, {from:bidderForArt2}), "Exception: transfer value is mismatching with auction price");
   });
   it("With expection, any change will be rewinded, so user's balance keep unchanged", async () => {
     let balance = await acg20Inst.balanceOf.call(bidderForArt2);
@@ -249,7 +249,7 @@ contract('API Support: freeze_token()', function(accounts) {
   });
   it("After user pay for auction, his balanced should be decreased", async () => {
     // end of the auction
-    await acg20Inst.transfer(artist, bidForArt2, artwork2, {from:bidderForArt2});
+    await acg20Inst.payForArtwork(artist, bidForArt2, artwork2, {from:bidderForArt2});
     userBalance[artist] += bidForArt2;
 
     let balance = await acg20Inst.balanceOf.call(bidderForArt2);

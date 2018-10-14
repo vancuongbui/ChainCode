@@ -63,7 +63,7 @@ contract StandardERC20 {
 	* @param _to address The address which you want to transfer to
 	* @param _value uint256 the amount of tokens to be transferred
 	*/
-    function transferFrom1(address _from, address _to, uint256 _value) public returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         require(_to != address(0), "Receiver must have a non-sero address");
         require(_value <= balances[_from], "Sender's balance must be larger than transferred amount");
         require(_value <= allowed[_from][msg.sender], "Sender must have approved larger amount to the delegator");
@@ -236,23 +236,23 @@ contract ACG20 is StandardERC20 {
     }
 
     /**
-	* @dev transfer token for a specified address (support auction)
+	* @dev transfer token for a specified address for artwork purchase (support auction)
 	* @param _to The address to transfer to.
 	* @param _value The amount to be transferred.
     * @param _artworkId The ID of artwork which the transfer is for
 	*/
-    function transfer(address _to, uint256 _value, uint256 _artworkId) public isForAuction(msg.sender, _value, _artworkId) returns (bool) {
+    function payForArtwork(address _to, uint256 _value, uint256 _artworkId) public isForAuction(msg.sender, _value, _artworkId) returns (bool) {
         return super.transfer(_to, _value);
     }
 
     /**
-	* @dev Transfer tokens from one address to another (support auction)
+	* @dev Transfer tokens from one address to another for artwork purchase(support auction)
 	* @param _from address The address which you want to send tokens from
 	* @param _to address The address which you want to transfer to
 	* @param _value uint256 the amount of tokens to be transferred
     * @param _artworkId The ID of artwork which the transfer is for
 	*/
-    function transferFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public isForAuction(_from, _value, _artworkId) returns (bool) {
-        return super.transferFrom1(_from, _to, _value);
+    function payForArtworkFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public isForAuction(_from, _value, _artworkId) returns (bool) {
+        return super.transferFrom(_from, _to, _value);
     }
 }
