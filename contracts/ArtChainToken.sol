@@ -81,7 +81,7 @@ contract StandardERC20 {
 	* @param _value The amount to be transferred.
 	*/
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0), "Receiver must have a non-sero address");
+        //require(_to != address(0), "Receiver must have a non-sero address");
         require(_value <= balances[msg.sender], "Sender's balance must be larger than transferred amount");
 
         // SafeMath.sub will throw if there is not enough balance.
@@ -98,9 +98,9 @@ contract StandardERC20 {
 	* @param _value uint256 the amount of tokens to be transferred
 	*/
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0), "Receiver must have a non-sero address");
+        //require(_to != address(0), "Receiver must have a non-sero address");
         require(_value <= balances[_from], "Sender's balance must be larger than transferred amount");
-        require(_value <= allowed[_from][msg.sender], "Sender must have approved larger amount to the delegator");
+        //require(_value <= allowed[_from][msg.sender], "Sender must have approved larger amount to the delegator");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
@@ -219,7 +219,7 @@ contract ACG20 is StandardERC20 {
 	* @dev Destroy user's token and decrease the total supply as well.
 	* @param _amount uint256 the amount of tokens to be destroyed
 	*/
-    function burn(uint256 _amount) public returns (bool) {
+    function burn(uint256 _amount) public onlyOwner returns (bool) {
         require(balances[msg.sender] >= _amount, "Burned amount exceeds user balance");
         totalSupply = totalSupply.sub(_amount);
         balances[msg.sender] = balances[msg.sender].sub(_amount);
@@ -231,13 +231,13 @@ contract ACG20 is StandardERC20 {
 	* @dev Destroy delegated user's token and decrease the total supply as well.
 	* @param _amount uint256 the amount of tokens to be destroyed
 	*/
-    function burnFrom(address _from, uint256 _amount) public returns (bool) {
-        require(balances[msg.sender] >= _amount, "Burned amount exceeds user balance");
-        require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds delegated value");
+    function burnFrom(address _from, uint256 _amount) public onlyOwner returns (bool) {
+        require(balances[_from] >= _amount, "Burned amount exceeds user balance");
+        // require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds delegated value");
 
         totalSupply = totalSupply.sub(_amount);
         balances[_from] = balances[_from].sub(_amount);
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
+        //allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
         emit Burn(_from, _amount);
         return true;
     }
@@ -273,9 +273,8 @@ contract ACG20 is StandardERC20 {
 	* @dev transfer token for a specified address (support auction)
 	* @param _to The address to transfer to.
 	* @param _value The amount to be transferred.
-    * @param _artworkId The ID of artwork which the transfer is for
 	*/
-    function transfer(address _to, uint256 _value, uint256 _artworkId) public isForAuction(msg.sender, _value, _artworkId) returns (bool) {
+    function transfer(address _to, uint256 _value) public returns (bool) {
         return super.transfer(_to, _value);
     }
 
@@ -284,9 +283,20 @@ contract ACG20 is StandardERC20 {
 	* @param _from address The address which you want to send tokens from
 	* @param _to address The address which you want to transfer to
 	* @param _value uint256 the amount of tokens to be transferred
-    * @param _artworkId The ID of artwork which the transfer is for
 	*/
-    function transferFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public isForAuction(_from, _value, _artworkId) returns (bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        require(super.approve(_from, _value));
         return super.transferFrom(_from, _to, _value);
+        //the sender(msg.sender) need to be the one who execute this transaction deu to security
+        //for example, double spending which is disussing on StackExachange.
+    }
+
+    /**
+    *
+     */
+    function approve(address _spender, uint256 _value) public returns (bool) {
+        allowed[msg.sender][_spender] = _value;
+        emit Approval(msg.sender, _spender, _value);
+        return true;
     }
 }
