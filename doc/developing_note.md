@@ -642,71 +642,42 @@ Now you get your contract instance and are able to interact with it, for example
 
 ## Development
 
-### About the auction
+### How to support the auction
 
-1. start auction
-Call change_artwork_status(): mark artwork to be auctioned
+To do:
+
+- Add change_artwork_status(): mark artwork to be auctioned
 
 Question:
+
 - how to cancel the frozen status?
 - how to cancel the auction - not same question with above.
 
 ### ERC20
 
 Question:
+
 1. how to withdraw?
 2. We need still set a upperbound of total supply for test.
 
+### ACG20 & ACG721
 
-### ACG20
+#### safe transaction
 
-Requirement:
+If we want to establish a transaction that buys ACG721 using ACG20, we need to make sure:
 
-- no upper bound of total supply
-- has administrator
-- for auction, need to know the frozen amount (different amount for different auction)
-  - so need have two index?
+1. buyer pay ACG20 to artist successfully
+2. artist pay ACG721 to buyer successfully
 
-- API (add new user): save a new address, with initial balance of 0
-- API (post new artwork): require the user is existing; set prize
-- API (buy artwirk): transfer from buyer to saler
-- API (buy token): add user's balance, and total supply as well.
-- API (freeze token): freeze token
-- API (check artwork): nothing
-- API (check user): check user balance
-- API (check transaction): nothing to do
+An intuitive solution is to first call ACG20.transfer() and then call ACG721.transfer(), but that way is practically unreliable. If second step failed, we need to rollback any changes in step 1.
 
-### ACG721
+A good practise is discussed in [Ethereum smart service payment with tokens][27] (with its [Chinese Translation: 代币支付的以太坊智能服务][28]).
 
-## Study materials
+More discussion could be found at [ERC20重要补充之approveAndCall][29].
 
-### Code exercise
-
-- [Truffle box][21]: provides online code template
-- [Not so smart contracts][22]: Github project, bad code examples
-- [Solidity patterns][23]: Github projects, design patterns of Solidity
-- [Solidity official document][24]
-- [Zeppelin Library][25]
-
-### Q & A
-
-- difference between accounts and node?
-- difference between transfer() and send()
-- what variables are used memory/storage
-- how to use function type? difference with functions?
-- function call can use x.f(), x is its first argument.
-- call(), delegatecall(), staticcall(), why will I use this way to call a function instead of x.f()?
-- how to deploy multiple contracts seperately in the same source file?
-- how to explain following quote?
-> Write your functions in a way that, for example, calls to external functions happen after any changes to state variables in your contract so your contract is not vulnerable to a reentrancy exploit.
-- re-enttry issue? should we move from state variable to a local memory variable?
-- If A transfer to B, then how could B consume >2300 gas to get the call stuck?
-- 当某个交易正处在挖矿过程中时状态不能确定，矿工可以在交易挖矿过程中控制执行时间
-- 如何判断无符号数的正负? 现在的代码中，是通过A-B>A来判断B的正负。为什么不能直接把B转换成符号数然后判断？
+I'll also introduce this non-standard interface *approveAndCall()* in our ACG tokens.
 
 ### To-do
-
-- follow a high rated opensource solidty project on github
 
 ## Project
 
@@ -736,20 +707,21 @@ The requirement is not 100 super-nodes, is 100 pre-fund nodes. The super nodes a
 
 ### work list
 
-- git server for code store
+- git server for code store (Done)
 - cloud server for private chain setup (using local system now)
 - develop toolkit
-  - remix
-  - truffle
+  - remix (Done)
+  - truffle (Done)
 - code test
-  - solidity on unit test
+  - solidity on unit test (Done)
   - java mocha framework on integration
     - how to generate random number
     - hard to emulate simutaneous operation
 - deploy private chain - Qin on scripts
 - implementation of ERC20 and ERC721
   - ERC20 on mainnet
-  - ERC721 TBD
+  - ACG20 (Done)
+  - ACG721 (Done)
 - implementation of API
   - add_new_user
   - post_new_user
@@ -760,6 +732,9 @@ The requirement is not 100 super-nodes, is 100 pre-fund nodes. The super nodes a
   - check_user
   - check_transaction
 - deployment
+  - code optimization
+  - check gas and eth, keep accout's eth is not used up
+  - Will storage be used up?
 
 ### Worklog
 
@@ -769,6 +744,14 @@ Afternoon: coding acg20
 9/Oct:
 Morning: coding acg20: auction 
 Afternoon: add acg20 unittest; acg721 first version
+10/Oct:
+acg721 contract.
+writing unit test.
+11/Oct:
+writing unit test.
+code coverage check.
+15/Oct:
+code and test approveAndCall()
 
 ### Meeting minutes
 
@@ -804,3 +787,6 @@ Afternoon: add acg20 unittest; acg721 first version
 [24]: https://solidity.readthedocs.io/en/develop/index.html
 [25]: https://github.com/OpenZeppelin/openzeppelin-solidity
 [26]: https://coursetro.com/posts/code/99/Interacting-with-a-Smart-Contract-through-Web3.js-(Tutorial)
+[27]: https://medium.com/@jgm.orinoco/ethereum-smart-service-payment-with-tokens-60894a79f75c
+[28]: https://ethfans.org/posts/ethereum-smart-service-payment-with-tokens
+[29]: https://zhuanlan.zhihu.com/p/41576064
