@@ -2,6 +2,11 @@ pragma solidity ^0.4.22;
 
 import "helpers/SafeMath.sol";
 
+contract ACG20Interface {
+    function payForArtworkFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public returns (bool) 
+    {}
+}
+
 /**
  * @title StandardERC721
  *
@@ -113,13 +118,25 @@ contract StandardERC721 {
 contract ACG721 is StandardERC721 {
 
     uint256 public totalSupply;
+
+    address public owner;
+    address public acg20Contract;
     
     // Metadata infos
     mapping(uint => string) public referencedMetadata;
 
     event Minted(address indexed _to, uint256 indexed _tokenId);
+    event RegisterACG20Contract(address indexed _contract);
 
+	// @dev Throws if called by any account other than the owner.
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only contract owner is permitted for the operation");
+        _;
+    }
+
+	// @dev constructor sets the original `owner` of the contract to the sender account.
     constructor() public {
+        owner = msg.sender;
     }
 
     modifier onlyNonexistentToken(uint _tokenId) {
@@ -164,5 +181,33 @@ contract ACG721 is StandardERC721 {
     function _insertTokenMetadata(uint _tokenId, string _metadata) internal
     {
         referencedMetadata[_tokenId] = _metadata;
+    }
+
+    /**
+	* @dev Register ACG20 contract
+	* @param _contract address The address of ACG20 contract
+    */
+    function registerACG20Contract(address _contract) public onlyOwner {
+        require(_contract != address(0), "Must register a valid contract address");
+        emit RegisterACG20Contract(_contract);
+        acg20Contract = _contract;
+    }
+
+    /**
+	* @dev Called as part of method approveAndCall() by an ACG20 contract.
+    *      First transfer buyer's ACG20 token to seller, and then change the owner
+    *      of the specific ACG721 token from seller to buyer.
+    * @param _buyer address The address of ACG20 token owner
+    * @param _seller address The address of ACG721 token owner
+    * @param _value uint256 the amount of ACG20 tokens to be transferred
+    * @param _tokenId The ID of ACG721 which the transfer is for
+	*/
+    function receiveApproval(address _buyer, address _seller, uint256 _value, uint256 _tokenId) public onlyExtantToken(_tokenId) returns (bool) {
+        require(msg.sender == acg20Contract, "Contract address must match the registered ACG20 contract");
+
+        require(ACG20Interface(acg20Contract).payForArtworkFrom(_buyer, _seller, _value, _tokenId), "ACG20 methold calling must return true");
+
+        transferFrom(_seller, _buyer, _tokenId);
+        return true;
     }
 }
