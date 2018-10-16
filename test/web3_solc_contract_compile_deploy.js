@@ -104,7 +104,14 @@ const contract_compile_deploy = async () => {
                 'acg721.sol': fs.readFileSync('./contracts/acg721.sol', 'utf8'),
                 'SafeMath.sol': fs.readFileSync('./helpers/SafeMath.sol', 'utf8')
             };
-            compilingResult = solc.compile({sources: input}, 1);
+            compilingResult = solc.compile({sources: input}, 1, (path) => {
+                console.log(path);
+                if (path == "helpers/SafeMath.sol") {
+                    return {contents: fs.readFileSync('./helpers/SafeMath.sol', 'utf8') };
+                } else {
+                    return {error: 'File not found'};
+                }
+            });
             if (compilingResult.errors) {
                 compilingResult.errors.forEach((errInfo) => {
                     console.log(errInfo);
