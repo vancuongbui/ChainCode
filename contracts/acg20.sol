@@ -129,7 +129,7 @@ contract ACG20 is StandardERC20 {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Mint(address indexed to, uint256 amount);
     event Burn(address indexed to, uint256 amount);
-    event NewBid(address indexed from, uint256 amount, uint256 artwork);
+    event Freeze(address indexed from, uint256 amount, uint256 artwork);
     event RegisterACG721Contract(address indexed to);
 
 	/**
@@ -238,7 +238,7 @@ contract ACG20 is StandardERC20 {
         highestBidder[_artworkId] = _from;
         highestBid[_artworkId] = _amount;
 
-        emit NewBid(_from, _amount, _artworkId);
+        emit Freeze(_from, _amount, _artworkId);
     }
 
     /**
