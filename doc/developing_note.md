@@ -243,6 +243,18 @@ sudo npm uninstall npm -g
 
 Not sure why I still find following folders */usr/local/lib/node_modules* (Is this installed by Xcode?) anyway I deleted it as well.
 
+### Web3
+
+Use *npm* to install web3. I tested different versions, and **by using latest version (*1.0.0-beta.36*), I failed to connect to a HTTP provider. So just use a stable version (*0.20.7*)**.
+
+To list all available version, use command `npm view web3 versions` to check all available versions, and install required by:
+
+```shell
+CXX=clang++ npm install -g web3@0.20.7 --save
+npm link web3
+```
+
+
 ### Remix
 
 The simplest way is to download Remix desktop app from its [release page][6]. And here I installed remix-ide from npm. Refer to [Solidity 开发工具组合 - In Mac][9].
@@ -659,6 +671,12 @@ Question:
 
 1. how to withdraw?
 2. We need still set a upperbound of total supply for test.
+
+### How to handle the return value of a non-constant function?
+
+the return value of a non-constant function could NEVER be obtained by a web3 client.
+
+But if another contract call the method, it is able to receive the return value.
 
 ### ACG20 & ACG721
 
