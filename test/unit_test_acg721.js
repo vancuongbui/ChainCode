@@ -1,4 +1,4 @@
-const expectThrow = require("../helpers/expectThrow.js")
+const expectThrow = require("../scripts/expectThrow.js")
 
 var ACG721TOKEN = artifacts.require("ACG721");
 
