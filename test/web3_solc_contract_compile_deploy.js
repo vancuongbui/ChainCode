@@ -3,28 +3,12 @@ const solc = require('solc');
 const Web3 = require('web3');
 const path = require('path');
 
-/*
-//async await action
-const deploy = async () => {
-    console.log("bytecode", bytecode);
-    console.log("interface", interface)
-    const accounts = await web3.eth.getAccounts();
-    // get a list of account, then deploy the account
-    console.log('attempt to deploy from accounts', accounts[0]);
-
-    const result = await new web3.eth.Contract(JSON.parse(interface))
-        .deploy({ 
-            data: '0x' + bytecode,      //keep in mind to put '0x' as prefix of the bytecode
-            // arguments: ['initial-message-1'],
-         })
-         .send({
-            from: accounts[0],
-            gas: '1000000',
-         });
-    console.log('contract deployed to ', result.options.address);
-    console.log(interface);
-}
-*/
+let CTRL_CONNECT_NETWORK = true;
+let CTRL_CREATE_NEW_USER = false;
+let CTRL_COMPILE_CONTRACT = true;
+let CTRL_DEPLOY_CONTRACT = true;
+let CTRL_USE_COMPILED_CONTRACT = true;
+let CTRL_TEST_DEPLOYED_CONTRACT = false;
 
 const contract_compile_deploy = async () => {
 
@@ -186,36 +170,10 @@ const contract_compile_deploy = async () => {
         console.log("Simple test: Owner of ACG721 =", acg721Inst.owner());
     }
 
-    function testContract(address) {
-        // Reference to the deployed contract
-        const token = contract.at(address);
-        // Destination account for test
-        const dest_account = '0x002D61B362ead60A632c0e6B43fCff4A7a259285';
-
-        // Assert initial account balance, should be 100000
-        const balance1 = token.balances.call(web3.eth.coinbase);
-        console.log(balance1 == 1000000);
-
-        // Call the transfer function
-        token.transfer(dest_account, 100, {from: web3.eth.coinbase}, (err, res) => {
-            // Log transaction, in case you want to explore
-            console.log('tx: ' + res);
-            // Assert destination account balance, should be 100 
-            const balance2 = token.balances.call(dest_account);
-            console.log(balance2 == 100);
-        });
-    }
+    // ----------------------------------------------------------------------------
+    // Return contract objects
+    // ----------------------------------------------------------------------------
+    return [contract20, contract721];
 };
 
-CTRL_CONNECT_NETWORK = true;
-CTRL_CREATE_NEW_USER = false;
-CTRL_COMPILE_CONTRACT = true;
-CTRL_DEPLOY_CONTRACT = true;
-CTRL_USE_COMPILED_CONTRACT = true;
-CTRL_TEST_DEPLOYED_CONTRACT = true;
-
-console.log("Test start here");
-contract_compile_deploy().then(()=>{
-    console.log("Test ended here");
-});
-
+module.exports = contract_compile_deploy;
