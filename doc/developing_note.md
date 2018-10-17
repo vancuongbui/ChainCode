@@ -770,6 +770,14 @@ writing unit test.
 code coverage check.
 15/Oct:
 code and test approveAndCall()
+16/Oct:
+explain contract to Cuong, help his test (morning)
+write web3 script to: connect chain, add new user, compile contract, deploy contract (address web3 version issue at 11 pm)
+17/Oct:
+continue to write web3 script (morning)
+meeting with ACG for web design (noon, about 1.5h)
+submit supplementery material for RA application to Sheng Wen (after noon, about 1h)
+define api files, setup test framework (try to figure out js module method, done at 10 pm)
 
 ### Meeting minutes
 
