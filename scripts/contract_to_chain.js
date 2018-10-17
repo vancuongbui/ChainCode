@@ -31,10 +31,11 @@ const contract_compile_deploy = async () => {
         } else {
             // set the provider you want from Web3.providers
             console.log("Set a new provider ...");
-            web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7546"));
+            web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:7545"));
         }
-        if (web3.isConnected()) {
-            console.log("Connected to RPC server ...")
+        if (!web3.isConnected()) {
+            console.log("Failed to connected to RPC server, exit ...");
+            return;
         }
         admin = web3.eth.accounts[0];
         console.log("Set admin = ", admin);
