@@ -1,5 +1,5 @@
 const Web3 = require('web3');
-const BB = require('bluebird');
+const Prom = require('bluebird');
 
 function ACGChainAPI() {
     let contract20;
@@ -10,6 +10,8 @@ function ACGChainAPI() {
 
     let web3;
     let administrator;
+
+    const post_artwork_prize = 1e3;
 
     function connect_to_chain(rpc_provider) {
         if (typeof web3 !== 'undefined') {
@@ -37,8 +39,8 @@ function ACGChainAPI() {
         contract20 = contracts[0];
         contract721 = contracts[1];
 
-        acg20Inst = web3.eth.contract(JSON.parse(contract20.abiString)).at(contract20.deployed.address);
-        acg721Inst = web3.eth.contract(JSON.parse(contract721.abiString)).at(contract721.deployed.address);
+        contract20.instance = web3.eth.contract(JSON.parse(contract20.abiString)).at(contract20.deployed.address);
+        contract721.instance = web3.eth.contract(JSON.parse(contract721.abiString)).at(contract721.deployed.address);
     }
 
     async function prepare_test_accounts(user_number, prefund_eth) {
@@ -62,24 +64,32 @@ function ACGChainAPI() {
         return users;
     }
 
-    function get_contracts() {
-        return [contract20, contract721];
+    function get_contracts_instrance() {
+        return [contract20.instance, contract721.instance];
     }
 
     async function add_new_user(user_address) {
-        console.log("Now add user: ", user_address, "to ArtChainGlobal ...");
-        const init_token20_balance = 1e4;
-
-        const acg20_mint_async = BB.promisify(acg20Inst.mint.sendTransaction);
-        const mint_trans = await acg20_mint_async(user_address, init_token20_balance, {from: administrator});
+        const init_token20_balance = 0;
+        const mint_trans = await Prom.promisify(contract20.instance.mint.sendTransaction)(user_address, init_token20_balance, {from: administrator});
         await mint_trans;
-        totalSupply = acg20Inst.totalSupply.call();
+        totalSupply = contract20.instance.totalSupply.call();
         console.log("Total Supply is ", totalSupply.toNumber());    
-        return;
     }
 
-    function post_new_artwork(user_address, artwork_info) {
-        let artwork_id = 1;
+    async function post_new_artwork(user_address, artwork_info) {
+        // Generate an artwork ID, first get current timestamp,
+        // i.e., the number of milliseconds since 1 January 1970 00:00:00
+        let artwork_id = new Date().getTime();
+        // append a 3-digit random number
+        artwork_id = (artwork_id*1e3) + Math.floor(Math.random()*1e3);
+
+        // Generate meta data
+        const metadata = JSON.stringify(artwork_info);
+        // Store 721 Token for user
+        await Prom.promisify(contract721.instance.mintWithMetadata.sendTransaction)(user_address, artwork_id, metadata, {from: administrator, gas: 2000000});
+        // Store 20 Token as prize of posting artwork
+        await Prom.promisify(contract20.instance.mint.sendTransaction)(user_address, post_artwork_prize, {from: administrator});
+
         return artwork_id;
     }
 
@@ -121,7 +131,7 @@ function ACGChainAPI() {
         // ----------------------------
         connect_to_chain: connect_to_chain,
         set_contract: set_contract,
-        get_contracts: get_contracts,
+        get_contracts_instrance: get_contracts_instrance,
         simple_test: simple_test,
         prepare_test_accounts: prepare_test_accounts,
         // ----------------------------
