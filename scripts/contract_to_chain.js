@@ -18,7 +18,6 @@ const contract_compile_deploy = async () => {
     const contract20 = {abiString:"", bytecode:"", deployed:"", web3Obj:""};
     const contract721 = {abiString:"", bytecode:"", deployed:"", web3Obj:""};
 
-
     // ----------------------------------------------------------------------------
     // Connect to ethereum network
     // ----------------------------------------------------------------------------
@@ -35,7 +34,7 @@ const contract_compile_deploy = async () => {
         }
         if (!web3.isConnected()) {
             console.log("Failed to connected to RPC server, exit ...");
-            return;
+            assert(false);
         }
         admin = web3.eth.accounts[0];
         console.log("Set admin = ", admin);
