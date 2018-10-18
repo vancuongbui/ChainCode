@@ -75,6 +75,30 @@ describe('A simple test suite', async function () {
             acg721_balance_before.toNumber() + 1,
             acg721_balance_after.toNumber(),
             "ACG721 balance should increase by 1");
-            console.log("New artwork ID = ", artwork_id);
+            //console.log("New artwork ID = ", artwork_id);
+        });
+
+        it('Test API: buy_token', async () => {
+            const buyer = users[2];
+            const token_value = 1e5;
+
+            // Obtain chain status
+            const acg20_balance_before = acg20Inst.balanceOf.call(buyer);
+    
+            // buyer buy amount of ACG20 tokens
+            const transaction_id = acgApi.buy_token(buyer, token_value);
+            console.log("Transaction Hash is ", transaction_id);
+
+            // wait for the transaction established
+            await Prom.promisify(web3.eth.getTransactionReceipt)(transaction_id);
+
+            // Obtain chain status after posting the new artwork
+            const acg20_balance_after = acg20Inst.balanceOf.call(buyer);
+    
+            // Check the change of user's balance
+            assert.equal(
+                acg20_balance_before.toNumber() + token_value,
+                acg20_balance_after.toNumber(),
+                "ACG20 balance should increase after buy_token()");
         });
 });

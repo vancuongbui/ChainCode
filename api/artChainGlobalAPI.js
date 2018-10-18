@@ -85,8 +85,12 @@ function ACGChainAPI() {
 
         // Generate meta data
         const metadata = JSON.stringify(artwork_info);
-        // Store 721 Token for user
-        await Prom.promisify(contract721.instance.mintWithMetadata.sendTransaction)(user_address, artwork_id, metadata, {from: administrator, gas: 2000000});
+
+        // Store 721 Token for user, because we don't know the size of
+        // meta data, so need first estimate required gas amount for the transaction
+        const gasValue = contract721.instance.mintWithMetadata.estimateGas(user_address, artwork_id, metadata) + 1e2;
+        await Prom.promisify(contract721.instance.mintWithMetadata.sendTransaction)(user_address, artwork_id, metadata, {from: administrator, gas: gasValue});
+
         // Store 20 Token as prize of posting artwork
         await Prom.promisify(contract20.instance.mint.sendTransaction)(user_address, post_artwork_prize, {from: administrator});
 
@@ -99,7 +103,11 @@ function ACGChainAPI() {
     }
 
     function buy_token(buyer_address, value) {
-        let transaction_id = 0;
+        const transaction_id = contract20.instance.mint.sendTransaction(
+            buyer_address,
+            value,
+            {from: administrator});
+
         return transaction_id;
     }
 
@@ -122,7 +130,7 @@ function ACGChainAPI() {
     }
 
     function check_transaction(transaction_id) {
-        return;
+        return web3.eth.getTransaction(transaction_id);
     }
 
     return {
