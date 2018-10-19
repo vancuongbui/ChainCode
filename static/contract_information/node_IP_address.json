@@ -1,0 +1,18 @@
+[
+    {
+        "nodeID": "node0",
+        "IPAddress": "http://127.0.0.1:8000"        
+    },
+    {
+        "nodeID": "node1",
+        "IPAddress": "http://127.0.0.1:8001"        
+    },
+    {
+        "nodeID": "node2",
+        "IPAddress": "http://127.0.0.1:8002"        
+    },
+    {
+        "nodeID": "node4",
+        "IPAddress": "http://127.0.0.1:8004"        
+    }
+]
