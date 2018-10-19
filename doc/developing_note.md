@@ -322,7 +322,71 @@ npm install ganache-cli -g
 
 Alternatively, download Ganache GUI app from its [website][14].
 
-#### Solitity-Coverage
+### private chain monitor tools
+
+Refer to [Monitoring the Ethereum Blockchain][30].
+We use **eth-net-intelligence-api** and **eth-netstats** to monitor our private chain status.
+
+Step 1: clone git repo and install
+
+```shell
+$ git clone https://github.com/cubedro/eth-net-intelligence-api
+$ cd eth-net-intelligence-api
+$ npm install
+$ sudo npm install -g pm2
+$
+$ git clone https://github.com/cubedro/eth-netstats.git
+$ npm install
+$ sudo npm install -g grunt-cli
+$ grunt
+```
+
+Step 2: change eth-net-intelligence-api's configuration file *xxx.json*.
+
+```json
+[
+  {
+    "name"              : "my_private_network",   --> this is your pm2 app name
+    "script"            : "app.js",
+    "log_date_format"   : "YYYY-MM-DD HH:mm Z",
+    "merge_logs"        : false,
+    "watch"             : false,
+    "max_restarts"      : 10,
+    "exec_interpreter"  : "node",
+    "exec_mode"         : "fork_mode",
+    "env":
+    {
+      "NODE_ENV"        : "production",
+      "RPC_HOST"        : "localhost",            --> IP
+      "RPC_PORT"        : "8000",                 --> port
+      "LISTENING_PORT"  : "30303",                --> no use
+      "INSTANCE_NAME"   : "node01",               --> node name
+      "CONTACT_DETAILS" : "",
+      "WS_SERVER"       : "http://localhost:3000",  --> monitor address
+      "WS_SECRET"       : "test",                 --> this is a phase connected to eth-netstats
+      "VERBOSITY"       : 3
+    }
+  }
+]
+```
+
+Step 3: launch eth-net-intelligence-api.
+
+`cd` into eth-net-intelligence-api folder andn start it by `pm2 start yourconfig.json`.
+
+You could check its status by `pm list <name>`. I once failed to start it, and by checking the log file under *~/.pm2/logs/xxx-error.log*, I found following info:
+
+> 2018-10-19 16:41 +11:00: [eth] =✘= PrimusError: The `timeout` option has been removed
+
+I guess that is due to the change of the new version of primus, and then downgrade primus module to version 4.0.0, and then it works.
+
+Step 4: launch eth-netstats
+
+First check the file *app.js*, make sure its port match the configuration of eth-net-intelligence-api's *WS_SECRET*. Then launch by `WS_SECRET=xxxx npm start`.
+
+Then open *WS_SERVER* address to monitor the chain.
+
+### Solitity-Coverage
 
 Under your truffle project folder, run:
 
@@ -778,6 +842,9 @@ continue to write web3 script (morning)
 meeting with ACG for web design (noon, about 1.5h)
 submit supplementery material for RA application to Sheng Wen (after noon, about 1h)
 define api files, setup test framework (try to figure out js module method, done at 10 pm)
+18/Oct:
+write mocha test framework for API
+write 4 APIs.
 
 ### Meeting minutes
 
@@ -816,3 +883,4 @@ define api files, setup test framework (try to figure out js module method, done
 [27]: https://medium.com/@jgm.orinoco/ethereum-smart-service-payment-with-tokens-60894a79f75c
 [28]: https://ethfans.org/posts/ethereum-smart-service-payment-with-tokens
 [29]: https://zhuanlan.zhihu.com/p/41576064
+[30]: https://medium.com/@jake.henningsgaard/monitoring-the-ethereum-blockchain-24384064fad3
