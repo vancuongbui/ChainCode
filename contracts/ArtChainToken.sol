@@ -1,40 +1,57 @@
-pragma solidity ^0.4.22;
+pragma solidity ^0.4.24;
 
-/**
- * @title SafeMath
- * @dev Math operations with safety checks that throw on error
- * @notice source: https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/math/SafeMath.sol
- */
+//import "SafeMath.sol";
 
 library SafeMath {
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        if (a == 0) {
-            return 0;
-        }
-        uint256 c = a * b;
-        assert(c / a == b);
-        return c;
+
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+    if (_a == 0) {
+      return 0;
     }
 
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-        return c;
-    }  
+    c = _a * _b;
+    assert(c / _a == _b);
+    return c;
+  }
 
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    // assert(_b > 0); // Solidity automatically throws when dividing by 0
+    // uint256 c = _a / _b;
+    // assert(_a == _b * c + _a % _b); // There is no case in which this doesn't hold
+    return _a / _b;
+  }
 
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        assert(c >= a);
-        return c;
-    }
+  /**
+  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 _a, uint256 _b) internal pure returns (uint256) {
+    assert(_b <= _a);
+    return _a - _b;
+  }
+
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 _a, uint256 _b) internal pure returns (uint256 c) {
+    c = _a + _b;
+    assert(c >= _a);
+    return c;
+  }
 }
 
+contract ACG721Interface {
+    function receiveApproval(address _from, address _to, uint256 _value, uint256 _tokenId) public returns (bool)
+    {}
+}
 
 /**
  * @title StandardERC20
@@ -81,7 +98,7 @@ contract StandardERC20 {
 	* @param _value The amount to be transferred.
 	*/
     function transfer(address _to, uint256 _value) public returns (bool) {
-        //require(_to != address(0), "Receiver must have a non-sero address");
+        require(_to != address(0), "Receiver must have a non-zero address");
         require(_value <= balances[msg.sender], "Sender's balance must be larger than transferred amount");
 
         // SafeMath.sub will throw if there is not enough balance.
@@ -98,9 +115,9 @@ contract StandardERC20 {
 	* @param _value uint256 the amount of tokens to be transferred
 	*/
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        //require(_to != address(0), "Receiver must have a non-sero address");
+        require(_to != address(0), "Receiver must have a non-sero address");
         require(_value <= balances[_from], "Sender's balance must be larger than transferred amount");
-        //require(_value <= allowed[_from][msg.sender], "Sender must have approved larger amount to the delegator");
+        require(_value <= allowed[_from][msg.sender], "Sender must have approved larger amount to the delegator");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
@@ -138,7 +155,7 @@ contract StandardERC20 {
 
 /**
  * @title ACG 20 Token
- * @dev ERC721 to support ArtChainGlobal system
+ * @dev ERC20 to support ArtChainGlobal system
  * 
  */
 contract ACG20 is StandardERC20 {
@@ -148,16 +165,18 @@ contract ACG20 is StandardERC20 {
     uint8 public decimals = 2;
 
     address public owner;
+    address public acg721Contract;
 
     // artwork ID => highest bidder address
-    mapping(uint256 => address) highestBidder;
+    mapping(uint256 => address) public highestBidder;
     // artwork ID => highest bid
-    mapping(uint256 => uint256) highestBid;
+    mapping(uint256 => uint256) public highestBid;
   
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event Mint(address indexed to, uint256 amount);
     event Burn(address indexed to, uint256 amount);
     event NewBid(address indexed from, uint256 amount, uint256 artwork);
+    event RegisterACG721Contract(address indexed to);
 
 	/**
 	* @dev Throws if called by any account other than the owner.
@@ -168,9 +187,11 @@ contract ACG20 is StandardERC20 {
     }
 
     /**
-	* @dev Check if the transfer is the payment of an auction. Throws if:
-    * - sdfds
-    * - sdfsd
+	* @dev Check if the transfer is the payment of an auction.
+    * - If it is, then
+    *    - transfer the ACG20 token from the frozen part
+    *    - reset the frozen record
+    * - If not, then transfer the ACG20 token from buyer's account
 	*/
     modifier isForAuction(address _from, uint256 _value, uint256 _artworkId) {
         if (_from == highestBidder[_artworkId]) {
@@ -184,10 +205,7 @@ contract ACG20 is StandardERC20 {
         _;
     }
 
-	/**
-	* @dev The artchain_acg20 constructor sets the original `owner` of the contract to the sender
-	* account.
-	*/
+	// @dev The artchain_acg20 constructor sets the original `owner` of the contract to the sender account.
     constructor() public {
         owner = msg.sender;
     }
@@ -219,7 +237,7 @@ contract ACG20 is StandardERC20 {
 	* @dev Destroy user's token and decrease the total supply as well.
 	* @param _amount uint256 the amount of tokens to be destroyed
 	*/
-    function burn(uint256 _amount) public onlyOwner returns (bool) {
+    function burn(uint256 _amount) public returns (bool) {
         require(balances[msg.sender] >= _amount, "Burned amount exceeds user balance");
         totalSupply = totalSupply.sub(_amount);
         balances[msg.sender] = balances[msg.sender].sub(_amount);
@@ -231,13 +249,13 @@ contract ACG20 is StandardERC20 {
 	* @dev Destroy delegated user's token and decrease the total supply as well.
 	* @param _amount uint256 the amount of tokens to be destroyed
 	*/
-    function burnFrom(address _from, uint256 _amount) public onlyOwner returns (bool) {
+    function burnFrom(address _from, uint256 _amount) public returns (bool) {
         require(balances[_from] >= _amount, "Burned amount exceeds user balance");
-        // require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds delegated value");
+        require(allowed[_from][msg.sender] >= _amount, "Burned amount exceeds granted value");
 
         totalSupply = totalSupply.sub(_amount);
         balances[_from] = balances[_from].sub(_amount);
-        //allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_amount);
         emit Burn(_from, _amount);
         return true;
     }
@@ -267,36 +285,55 @@ contract ACG20 is StandardERC20 {
         highestBid[_artworkId] = _amount;
 
         emit NewBid(_from, _amount, _artworkId);
+        return true;
     }
 
     /**
-	* @dev transfer token for a specified address (support auction)
+	* @dev transfer token for a specified address for artwork purchase (support auction)
 	* @param _to The address to transfer to.
 	* @param _value The amount to be transferred.
+    * @param _artworkId The ID of artwork which the transfer is for
 	*/
-    function transfer(address _to, uint256 _value) public returns (bool) {
+    function payForArtwork(address _to, uint256 _value, uint256 _artworkId) public isForAuction(msg.sender, _value, _artworkId) returns (bool) {
         return super.transfer(_to, _value);
     }
 
     /**
-	* @dev Transfer tokens from one address to another (support auction)
+	* @dev Transfer tokens from one address to another for artwork purchase(support auction)
 	* @param _from address The address which you want to send tokens from
 	* @param _to address The address which you want to transfer to
 	* @param _value uint256 the amount of tokens to be transferred
+    * @param _artworkId The ID of artwork which the transfer is for
 	*/
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(super.approve(_from, _value));
+    function payForArtworkFrom(address _from, address _to, uint256 _value, uint256 _artworkId) public isForAuction(_from, _value, _artworkId) returns (bool) {
         return super.transferFrom(_from, _to, _value);
-        //the sender(msg.sender) need to be the one who execute this transaction deu to security
-        //for example, double spending which is disussing on StackExachange.
     }
 
     /**
-    *
-     */
-    function approve(address _spender, uint256 _value) public returns (bool) {
-        allowed[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
-        return true;
+	* @dev Register ACG721 contract
+	* @param _contract address The address of ACG721 contract
+    */
+    function registerACG721Contract(address _contract) public onlyOwner {
+        require(_contract != address(0), "Must register a valid contract address");
+        emit RegisterACG721Contract(_contract);
+        acg721Contract = _contract;
+    }
+
+    /**
+	* @dev Establish a safe transaction of buying a ACG721 token using ACG20 token.
+    *      Buyer first approves ACG721 contract to transfer the specific amount of 
+    *      ACG20 tokens under his account, and then call method  
+    *      receiveApproval() of ACG721 contract to accomplish the transaction.
+    *      Before calling this method, seller must approve this ACG20 contract to
+    *      transfer his ACG721 token with specific ID beforehead.
+    * @param _seller address The address of ACG721 token owner
+    * @param _value uint256 the amount of ACG20 tokens to be transferred
+    * @param _artworkId The ID of ACG721 which the transfer is for
+	*/
+    function approveAndCall(address _seller, uint256 _value, uint256 _artworkId) public returns (bool) {
+        require(acg721Contract != address(0), "Must register a valid contract before calling approveAndCall() method");
+        approve(acg721Contract, _value);
+
+        require(ACG721Interface(acg721Contract).receiveApproval(msg.sender, _seller, _value, _artworkId), "approveAndCall() must ensure calling receiveApproval() succeed");
     }
 }

@@ -1,6 +1,6 @@
 //const HDWalletProvider = require('truffle-hdwallet-provider');
 const Web3 = require('web3');
-const { interface, bytecode } = require('./compile');
+const { interface, bytecode } = require('../compiles/compile');
 
 // const provider = new HDWalletProvider(
 //     // two arguements, account Mnemonic, and url - infura link
@@ -14,8 +14,8 @@ const web3 = new Web3(provider);
 
 //async await action
 const deploy = async () => {
-    console.log("bytecode", bytecode);
-    console.log("interface", interface)
+    //console.log("bytecode", bytecode);
+    //console.log("interface", interface)
     const accounts = await web3.eth.getAccounts();
     // get a list of account, then deploy the account
     console.log('attempt to deploy from accounts', accounts[0]);
@@ -27,7 +27,7 @@ const deploy = async () => {
          })
          .send({
             from: accounts[0],
-            gas: '1000000',
+            gas: '2000000',
          });
     console.log('contract deployed to ', result.options.address);
     console.log(interface);
