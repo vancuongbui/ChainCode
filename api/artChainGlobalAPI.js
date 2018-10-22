@@ -13,7 +13,7 @@ function ACGChainAPI() {
 
     const post_artwork_prize = 1e3;
 
-    function connect_to_chain(rpc_provider) {
+    async function connect_to_chain(rpc_provider) {
         if (typeof web3 !== 'undefined') {
             console.log("API: Connect to an existing web3 provider ...");
             web3 = new Web3(web3.currentProvider);
@@ -22,11 +22,11 @@ function ACGChainAPI() {
             console.log("API: Set a new web3 provider ...");
             web3 = new Web3(new Web3.providers.HttpProvider(rpc_provider));
         }
-        if (!web3.isConnected()) {
-            console.log("API: Failed to connect to chain, exit ...");
-            return false;
-        }
-        administrator = web3.eth.accounts[0];
+        // Exception is thrown if the connection failed
+        await web3.eth.net.isListening();
+        accounts = await web3.eth.getAccounts();
+        administrator = accounts[0];
+        console.log("Connected to RPC server, set administrator to ", administrator, "...");
         return true;
     }
 
@@ -39,8 +39,8 @@ function ACGChainAPI() {
         contract20 = contracts[0];
         contract721 = contracts[1];
 
-        contract20.instance = web3.eth.contract(JSON.parse(contract20.abiString)).at(contract20.deployed.address);
-        contract721.instance = web3.eth.contract(JSON.parse(contract721.abiString)).at(contract721.deployed.address);
+        contract20.instance = new web3.eth.Contract(JSON.parse(contract20.abiString),contract20.deployed.options.address);
+        contract721.instance = new web3.eth.Contract(JSON.parse(contract721.abiString), contract721.deployed.options.address);
     }
 
     async function prepare_test_accounts(user_number, prefund_eth) {
@@ -49,18 +49,18 @@ function ACGChainAPI() {
         // web3.eth.accounts.create
         // web3.personal.newAccount
         for (let i=0; i<user_number; i++) {
-            users[i] = await web3.personal.newAccount('password');
+            users[i] = await web3.eth.personal.newAccount('password');
             // send some eth to new user
             await web3.eth.sendTransaction({
                 from: administrator,
                 to: users[i],
-                value:web3.toWei(prefund_eth, "ether")})
-        }
-        // output user initial balance
-        console.log("  admin   : " + administrator + " \tbalance: " + web3.fromWei(web3.eth.getBalance(administrator), "ether") + " ether");
-        users.forEach(function(e) {
-            console.log("  accounts: " + e + " \tbalance: " + web3.fromWei(web3.eth.getBalance(e), "ether") + " ether");
-        });
+                value: web3.utils.toWei(prefund_eth.toString(), "ether")
+            });
+
+            const userBalance = await web3.eth.getBalance(users[i]);
+
+            console.log("User ", users[i], "is added, initial balance is ", web3.utils.fromWei(userBalance, "ether"), "ether");
+        };
         return users;
     }
 
@@ -70,10 +70,9 @@ function ACGChainAPI() {
 
     async function add_new_user(user_address) {
         const init_token20_balance = 0;
-        const mint_trans = await Prom.promisify(contract20.instance.mint.sendTransaction)(user_address, init_token20_balance, {from: administrator});
-        await mint_trans;
-        totalSupply = contract20.instance.totalSupply.call();
-        console.log("Total Supply is ", totalSupply.toNumber());    
+        await contract20.instance.methods.mint(user_address, init_token20_balance).send({
+            from: administrator
+        });
     }
 
     async function post_new_artwork(user_address, artwork_info) {
@@ -88,11 +87,18 @@ function ACGChainAPI() {
 
         // Store 721 Token for user, because we don't know the size of
         // meta data, so need first estimate required gas amount for the transaction
-        const gasValue = contract721.instance.mintWithMetadata.estimateGas(user_address, artwork_id, metadata) + 1e2;
-        await Prom.promisify(contract721.instance.mintWithMetadata.sendTransaction)(user_address, artwork_id, metadata, {from: administrator, gas: gasValue});
+        const gasValue = await contract721.instance.methods.mintWithMetadata(user_address, artwork_id, metadata).estimateGas({
+            from: administrator
+        });
+        await contract721.instance.methods.mintWithMetadata(user_address, artwork_id, metadata).send({
+            from: administrator,
+            gas: gasValue + 1e2
+        });
 
         // Store 20 Token as prize of posting artwork
-        await Prom.promisify(contract20.instance.mint.sendTransaction)(user_address, post_artwork_prize, {from: administrator});
+        await contract20.instance.methods.mint(user_address, post_artwork_prize).send({
+            from: administrator
+        });
 
         return artwork_id;
     }
@@ -102,13 +108,12 @@ function ACGChainAPI() {
         return transaction_id;
     }
 
-    function buy_token(buyer_address, value) {
-        const transaction_id = contract20.instance.mint.sendTransaction(
-            buyer_address,
-            value,
-            {from: administrator});
+    async function buy_token(buyer_address, value) {
+        const receipt = await contract20.instance.methods.mint(buyer_address, value).send({
+            from: administrator
+        });
 
-        return transaction_id;
+        return receipt.transactionHash;
     }
 
     function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
@@ -129,7 +134,7 @@ function ACGChainAPI() {
         return type, user_balance, artwork_id;
     }
 
-    function check_transaction(transaction_id) {
+    async function check_transaction(transaction_id) {
         return web3.eth.getTransaction(transaction_id);
     }
 
