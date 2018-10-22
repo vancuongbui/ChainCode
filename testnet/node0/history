@@ -1,0 +1,65 @@
+admin.nodeInfo.enode
+admin.datadir
+admin.peers
+net.peerCount
+eth.coinbase
+eth.defaultAccount
+eth.defaultBlock
+eth.defaultAccount = eth.coinbase
+miner.start()
+personal
+eth.coinbase
+miner.start()
+eth.defaultAccount
+miner.start()
+eth.defaultAccount = eth.coinbase
+miner.start()
+admin.startRPC("127.0.0.1", 31000, "*", "eth,net,web3,admin,personal")
+miner.start()
+eth.accounts.
+eth.accounts
+eth.accounts[0]
+var sender = eth.accounts[0]
+eth
+eth.getBalance()
+eth.getBalance(eth.accounts[0])
+var receiver = "0x50cf4d6491d3516c32f03b2ea2a13c4655f7977e"
+var amount = web3.toWei(10, "ether")
+amount
+eth.sendTransaction({from:sender, to:receiver, value:amount})
+eth.getBalance(eth.accounts[0])
+eth.accounts[0]
+personal
+eth.getBalance(eth.accounts[0])
+miner.start()
+miner.stop()
+miner.start()
+miner.getHashrate()
+miner.start()
+eth.blockNumber
+miner.start()
+eth.blockNumber
+admin
+admin.getPeers
+miner.stop()
+eth.blockNumber
+miner.start()
+miner.stop()
+eth.blockNumber
+admin.peers
+eth.blockNumber
+eth.coinbase
+eth.blockNumber
+eth.getBlock
+eth.getBlock(1)
+eth.getBlock(0)
+eth.getBlock(2)
+eth.getBlock(1)
+miner.start()
+eth.blockNumber
+miner.start()
+admin.startRPC("127.0.0.1", 31000, "*", "eth,net,web3,admin,personal")
+miner.start()
+minor.stop()
+miner.stop()
+admin.startRPC("127.0.0.1", 31000, "*", "eth,net,web3,admin,personal")

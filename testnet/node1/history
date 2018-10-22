@@ -1,0 +1,22 @@
+admin.nodeInfo.enode
+net.peerCount
+eth.defaultAccount = eth.coinbase
+miner.start()
+eth.accounts[0]
+eth.getBalance(eth.accounts[0])
+miner.start()
+miner
+eth.coinbase
+miner
+miner.start()
+miner.start(1)
+miner.start()
+eth.blockNumber
+miner.stop()
+miner.start()
+eth.namereg
+eth.blockNumber
+admin.peers
+eth.getBlock(1)
+miner.start()
+miner.stop()
