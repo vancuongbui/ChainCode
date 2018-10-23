@@ -14,33 +14,42 @@ const acgApi = AcgApi();
 let acg20Inst;
 let acg721Inst;
 
-const USE_DEPLOYED_CONTRACTS = true;
-const SIMPLE_TEST_ON_ENVIRONMENT = true;
-const post_artwork_prize = 1e3;
+const COMPILE_CONTRACTS_FROM_SOURCE_FILE = false;
+const RETRIEVE_DEPLOYED_CONTRACTS_FROM_CHAIN = true;
+const SIMPLE_TEST_ON_ENVIRONMENT = false;
 const CREATE_NEW_ACCOUNTS_FOR_TEST = false;
 const contract_address = [
-    '0x372AcD4b2090221ED2A0FaB80866D6466559d7CC',
-    '0x8D6637cc64B3C87a7D887a25fE284185f64Dbf85'
+    '0x81046AF5312eE8D8f7AbBe2528e0419E0E2554E6',
+    '0x9924B156F473e0ed26C5ebd819Ba28A9Bb84E63B'
 ]
+const post_artwork_prize = 1e3;
 
 describe('A simple test suite', async function () {
     before (async function () {
+        //this.timeout(30000);
         console.log("Setup environment start ...");
         //contracts = await contract_compile_deploy(RPC_SERVER);
 
         // Connect to RPC server
        web3 = await acgApi.connect_to_chain(RPC_SERVER);
 
-        // Read in the compiled contract JSON file
-        const contract_folder = path.resolve(__dirname, '..', 'build', 'contracts');
-        acgApi.read_in_compiled_contract_JSON(contract_folder);
+        // Get contract interface by:
+        // 1. compiling from source files, or
+        // 2. read in the compiled JSON files
+        if (COMPILE_CONTRACTS_FROM_SOURCE_FILE) {
+            const contract_folder = path.resolve(__dirname, '..', 'contracts');
+            acgApi.compile_contract_from_source(contract_folder);   
+        } else {
+            const contract_folder = path.resolve(__dirname, '..', 'build', 'contracts');
+            acgApi.read_in_compiled_contract_JSON(contract_folder);    
+        }
 
-        if (USE_DEPLOYED_CONTRACTS) {
+        if (RETRIEVE_DEPLOYED_CONTRACTS_FROM_CHAIN) {
             // Fetch the deployed contracts
             acgApi.retrieve_deployed_contracts(contract_address);
         } else {
             // Deploy new contracts for test
-            acgApi.deploy_new_contracts();
+            await acgApi.deploy_new_contracts();
         }
 
         if (SIMPLE_TEST_ON_ENVIRONMENT) {
@@ -66,7 +75,6 @@ describe('A simple test suite', async function () {
         console.log("Setup environment finish ...");
         
         [acg20Inst, acg721Inst] = acgApi.get_contracts_instrance();
-
     });
 
     it('Test API: add_new_user', async () => {
@@ -88,7 +96,7 @@ describe('A simple test suite', async function () {
         "New user's balance of ACG721 token should be zero");
     });
 
-    it('Test API: post_new_artwork', async function (done) {
+    it('Test API: post_new_artwork', async () => {
         const artist = users[1];
         const artwork = {
             "type":"paint",
@@ -104,13 +112,11 @@ describe('A simple test suite', async function () {
         const acg20_balance_before = await trans_acg20_balance_before;
         const acg721_balance_before = await trans_acg721_balance_before;
 
-        console.log("Get balance before posting new artworks");
-
         // Post a new artwork, it will:
         // - Add a new 721 token for user
         // - Add amount of 20 token as prize
         const artwork_id = await acgApi.post_new_artwork(artist, artwork);
-
+        
         // Obtain chain status after posting the new artwork
         const trans_acg20_balance_after = acg20Inst.methods.balanceOf(artist).call();
         const trans_acg721_balance_after = acg721Inst.methods.balanceOf(artist).call();
@@ -151,4 +157,18 @@ describe('A simple test suite', async function () {
                 Number(acg20_balance_after),
                 "ACG20 balance should increase after buy_token()");
         });
+
+        it('Test API: check_user', async function () {
+            const artist = users[1];
+            let user_type, user_balance_20, user_balance_721, artwork_list;
+            [user_type, user_balance_20, user_balance_721, artwork_list] = 
+            await acgApi.check_user(artist);
+    
+            console.log("User's type is ", user_type);
+            console.log("User's balance of ACG20 tokens is ", user_balance_20);
+            console.log("User's balance of ACG721 tokens is ", user_balance_721);
+            console.log("User's artwork list is\n", artwork_list);
+    
+        });
+        
 });

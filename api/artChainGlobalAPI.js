@@ -94,8 +94,7 @@ function ACGChainAPI() {
         });
 
         let estimatedGas = await contract20.instance.deploy().estimateGas();
-        console.log("Estimate to use ", estimatedGas, "gas to deploy the contract");
-        await contract20.instance.deploy().send({
+        contract20.instance = await contract20.instance.deploy().send({
             from: administrator,
             gas: estimatedGas
         });
@@ -104,8 +103,7 @@ function ACGChainAPI() {
             data: contract721.bytecode
         });
         estimatedGas = await contract721.instance.deploy().estimateGas();
-        console.log("Estimate to use ", estimatedGas, "gas to deploy the contract");
-        await contract721.instance.deploy().send({
+        contract721.instance = await contract721.instance.deploy().send({
             from: administrator,
             gas: estimatedGas
         });
@@ -177,27 +175,27 @@ function ACGChainAPI() {
         let artwork_id = new Date().getTime();
         // append a 3-digit random number
         artwork_id = (artwork_id*1e3) + Math.floor(Math.random()*1e3);
-
         // Generate meta data
         const metadata = JSON.stringify(artwork_info);
 
         // Store 721 Token for user, because we don't know the size of
         // meta data, so need first estimate required gas amount for the transaction
-        //const gasValue = await contract721.instance.methods.mintWithMetadata(user_address, artwork_id, metadata).estimateGas({
-        //    from: administrator
-        //});
-        // Store 20 Token as prize of posting artwork
+        const gasValue = await contract721.instance.methods.mintWithMetadata(user_address, artwork_id, metadata).estimateGas({
+            from: administrator
+        });
         const trans_721_mint = contract721.instance.methods.mintWithMetadata(user_address, artwork_id, metadata).send({
             from: administrator,
-            gas: 1500000
+            gas: gasValue
         });
+        // Store 20 Token as prize of posting artwork
         const trans_20_mint = contract20.instance.methods.mint(user_address, post_artwork_prize).send({
             from: administrator
         });
-        console.log("Posted a new artwork, start ...");
-        await trans_721_mint;
+
+        // Waiting for the operation on the chain
         await trans_20_mint;
-        console.log("Posted a new artwork, stop ...");
+        await trans_721_mint;
+
         return artwork_id;
     }
 
@@ -214,22 +212,46 @@ function ACGChainAPI() {
         return receipt.transactionHash;
     }
 
-    function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
+    async function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
         let transaction_id = 0;
         return transaction_id;
     }
 
-    function check_artwork(artwork_id) {
-        let owner_address;
-        let artwork_info;
-        return owner_address, artwork_info;
+    async function check_artwork(artwork_id) {
+        // Query owner according to token ID
+        const trans_query_owner = contract721.instance.methods.ownerOf(artwork_id).call();
+        // Query metadata according to token ID
+        const trans_query_metadata = contract721.instance.methods.referencedMetadata(artwork_id);
+        // Wait for the return values
+        const owner_address = await trans_query_owner;
+        const metadataString = await trans_query_metadata;
+        const artwork_info = JSON.parse(metadataString);
+        return [owner_address, artwork_info];
     }
 
-    function check_user(user_address) {
-        let type;
-        let user_balance;
-        let artwork_id;
-        return type, user_balance, artwork_id;
+    async function check_user(user_address) {
+        const type = "";
+
+        // Query balance of token ACG721
+        const trans_query_balance_721 = contract721.instance.methods.balanceOf(user_address).call();
+        // Query balance of token ACG20
+        const trans_query_balance_20 = contract20.instance.methods.balanceOf(user_address).call();
+
+        // Wait for value of ACG721 balance
+        const user_balance_acg721 = await trans_query_balance_721;
+        const trans_query_artwork_list = [];
+        // Query the artwork belonging to the user
+        for (let artwork_index=0; artwork_index<user_balance_acg721; artwork_index++) {
+            trans_query_artwork_list[artwork_index] = contract721.instance.methods.listOfOwnerTokens(user_address, artwork_index).call();
+        }
+        // Wait for the return values
+        const user_balance_acg20 = await trans_query_balance_20;
+        const artwork_id_list = [];
+        for (let artwork_index=0; artwork_index<user_balance_acg721; artwork_index++) {
+            artwork_id_list[artwork_index] = await trans_query_artwork_list[artwork_index];
+        }
+
+        return [type, user_balance_acg20, user_balance_acg721, artwork_id_list];
     }
 
     async function check_transaction(transaction_id) {
