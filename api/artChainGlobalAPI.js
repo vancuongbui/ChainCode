@@ -215,9 +215,12 @@ function ACGChainAPI() {
     async function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
         // Check artwork status is in auction
         const artwork_info = await contract721.instance.methods.referencedMetadata(artwork_id).call();
-        console.log(artwork_info.status);
+        if (artwork_info.length <= 0) {
+            console.log("Given artwork ID is not stored in the contract");
+            return 0;
+        }
 
-        const gasValue = contract20.instance.methods.freeze(buyer_address, artwork_prize, artwork_id).estimatedGas({
+        const gasValue = await contract20.instance.methods.freeze(buyer_address, artwork_prize, artwork_id).estimateGas({
             from: administrator
         });
         // freeze buyer's ACG20 token

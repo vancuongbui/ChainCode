@@ -236,7 +236,23 @@ describe('API basic test framework', async function () {
         });
 
         it('Test API: freeze_token', async function () {
+            const buyer1 = users[2];
+            // Top up buyer's ACG20 token
+            let buyer_balance_20 = await acg20Inst.methods.balanceOf(buyer1).call();
+            buyer_balance_20 = Number(buyer_balance_20);
+            if (buyer_balance_20 < 1e9) {
+                const topup_value = 1e9;
+                await acgApi.buy_token(buyer1, topup_value);
+                buyer_balance_20 += topup_value;
+            }
 
+            const artwork_id = artwork_id_list[0];
+            const artwork_bid = 1e7;
+            await acgApi.freeze_token(buyer1, artwork_id, artwork_bid, 0);
+
+            buyer_balance_20 -= artwork_bid;
+            const buyer_balance_after = await acg20Inst.methods.balanceOf(buyer1).call();
+            assert.equal(Number(buyer_balance_after), buyer_balance_20, "User's balance should decrease by freezing");
         });
 
         it('Test API: check_artwork', async function () {
@@ -272,7 +288,6 @@ describe('API basic test framework', async function () {
         });
 
         it('Test API: check_transaction', async function () {
-            console.log("Transaction to be checked:\n", transaction_to_be_checked);
             const trans_check_transaction = [];
             transaction_to_be_checked.forEach((trans_id) => {
                 trans_check_transaction.push(acgApi.check_transaction(trans_id));
