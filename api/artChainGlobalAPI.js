@@ -11,7 +11,7 @@ function ACGChainAPI() {
     let web3;
     let administrator;
 
-    const post_artwork_prize = 1e3;
+    const post_artwork_incentive = 1e3;
 
     async function connect_to_chain(rpc_provider) {
         if (typeof web3 !== 'undefined') {
@@ -188,7 +188,7 @@ function ACGChainAPI() {
             gas: gasValue
         });
         // Store 20 Token as prize of posting artwork
-        const trans_20_mint = contract20.instance.methods.mint(user_address, post_artwork_prize).send({
+        const trans_20_mint = contract20.instance.methods.mint(user_address, post_artwork_incentive).send({
             from: administrator
         });
 
@@ -213,15 +213,27 @@ function ACGChainAPI() {
     }
 
     async function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
-        let transaction_id = 0;
-        return transaction_id;
+        // Check artwork status is in auction
+        const artwork_info = await contract721.instance.methods.referencedMetadata(artwork_id).call();
+        console.log(artwork_info.status);
+
+        const gasValue = contract20.instance.methods.freeze(buyer_address, artwork_prize, artwork_id).estimatedGas({
+            from: administrator
+        });
+        // freeze buyer's ACG20 token
+        const receipt = await contract20.instance.methods.freeze(buyer_address, artwork_prize, artwork_id).send({
+            from: administrator,
+            gas: gasValue
+        });
+
+        return receipt.transactionHash;
     }
 
     async function check_artwork(artwork_id) {
         // Query owner according to token ID
         const trans_query_owner = contract721.instance.methods.ownerOf(artwork_id).call();
         // Query metadata according to token ID
-        const trans_query_metadata = contract721.instance.methods.referencedMetadata(artwork_id);
+        const trans_query_metadata = contract721.instance.methods.referencedMetadata(artwork_id).call();
         // Wait for the return values
         const owner_address = await trans_query_owner;
         const metadataString = await trans_query_metadata;
