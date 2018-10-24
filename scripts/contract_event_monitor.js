@@ -47,7 +47,6 @@ async function retrieve_past_events() {
     // Get contract instances
     [contract20, contract721] = acgApi.get_contracts_instrance();
     const events_array = await contract20.getPastEvents('allEvents', {
-        //filter: {myIndexedParam: [20,23], myOtherIndexedParam: '0x123456789...'}, // Using an array means OR: e.g. 20 or 23
         fromBlock: 0,
         toBlock: 'latest'
     });
@@ -60,11 +59,6 @@ function teardown() {
 
 prepare().then( async () => {
     console.log("Start work from here ....");
-
-    console.log(web3.currentProvider.connection.connecting);
-
-    teardown();
-    return;
 
     //const events_array = await retrieve_past_events();
     //console.log("Retrieve ", events_array.length, " events");
