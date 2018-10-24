@@ -555,18 +555,24 @@ Option | Explanation
   --rpc | Enable the HTTP-RPC server
   --rpccorsdomain | value Comma separated list of domains from which to accept cross origin requests (browser enforced)
 
-To start the node with:
+To start the node, use following command:
 
+```shell
+geth --datadir node0 --port 30000 --nodiscover --unlock '0' --rpc --rpcapi "web3,eth,net,admin,personal" --rpccorsdomain "http://localhost:8000" --rpcport 31000 --mine
+```
+
+This way guarantees the node:
 - rpc enabled
 - starting mining automatically
 - not locking automatically
 - customized port
 - enforcing browser access
+- permit web3.js to use *peronsal* api to operate on the accounts
 
-use following command:
+If we want to use webSocket to connect (so as to support monitor the events by `events.allEvents` in web3.js), we should start the node by:
 
 ```shell
-geth --datadir node0 --port 30000 --nodiscover --unlock '0' --rpc --rpcapi "web3,eth,net,admin" --rpccorsdomain "*" --rpcport 31000 --mine
+geth --datadir node0 --port 30000 --nodiscover --unlock '0' --ws --wsport 31000 --wsorigins "*" --wsapi "db,web3,eth,net,admin,personal" --mine
 ```
 
 #### Step 4: add peer nodes
@@ -632,7 +638,6 @@ Note if we want to use GUI app like Mist to operate on the account, we need to l
 // 不启动 rpc 的话，也可以如下直接通过 ipc 通信
 open -a /Applications/Mist.app --args --rpc /path/to/geth.ipc --node-networkid your_network_id --node-datadir /path/to/ethereum/dir/
 ```
-
 
 #### Step 7: deploy a contract
 
@@ -711,6 +716,10 @@ An explanation about this *archive mode* is:
 Remaining question:
 
 - will this affect file size seriously?
+
+#### Security issue: Use IPC, RPC or WebSocket?
+
+
 
 #### How to ensure every account has enough eth to operate on the network?
 

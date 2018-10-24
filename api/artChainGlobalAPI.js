@@ -20,7 +20,8 @@ function ACGChainAPI() {
         } else {
             // set the provider you want from Web3.providers
             console.log("API: Set a new web3 provider ...");
-            web3 = new Web3(new Web3.providers.HttpProvider(rpc_provider));
+            //web3 = new Web3(new Web3.providers.HttpProvider(rpc_provider));
+            web3 = new Web3(new Web3.providers.WebsocketProvider(rpc_provider));
         }
         // Exception is thrown if the connection failed
         await web3.eth.net.isListening();

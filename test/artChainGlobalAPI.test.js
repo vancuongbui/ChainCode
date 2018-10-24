@@ -1,7 +1,5 @@
 const assert = require('assert');
-const Prom = require('bluebird');
 const path = require('path');
-const fs = require('fs');
 
 //const contract_compile_deploy = require('../scripts/contract_to_chain_web3_1.0.js');
 const AcgApi = require('../api/artChainGlobalAPI.js');
@@ -18,7 +16,7 @@ const CREATE_NEW_ACCOUNTS_FOR_TEST = false;
 const contract_address = [
     '0x81046AF5312eE8D8f7AbBe2528e0419E0E2554E6',
     '0x9924B156F473e0ed26C5ebd819Ba28A9Bb84E63B'
-]
+];
 
 describe('API basic test framework', async function () {
 
@@ -298,5 +296,5 @@ describe('API basic test framework', async function () {
                 transaction = await trans;
                 //console.log(transaction);
             });
-        });
+        });   
 });
