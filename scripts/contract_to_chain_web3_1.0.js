@@ -10,11 +10,12 @@ let CTRL_DEPLOY_CONTRACT = true;
 let CTRL_USE_COMPILED_CONTRACT = true;
 let CTRL_TEST_DEPLOYED_CONTRACT = false;
 
+let compiledAcg20;
+
 const contract_compile_deploy = async (RPC_SERVER) => {
 
     let web3;
     let admin;
-    let users = [];
     const contract20 = {abiString:"", bytecode:"", deployed:"", web3Obj:""};
     const contract721 = {abiString:"", bytecode:"", deployed:"", web3Obj:""};
 
@@ -32,11 +33,11 @@ const contract_compile_deploy = async (RPC_SERVER) => {
             console.log("Set a new provider ...");
             web3 = new Web3(new Web3.providers.HttpProvider(RPC_SERVER));
         }
-        if (!web3.isConnected()) {
-            console.log("Failed to connected to RPC server, exit ...");
-            assert(false);
-        }
-        admin = web3.eth.accounts[0];
+        // Exception is thrown if the connection failed
+        await web3.eth.net.isListening();
+        console.log("Connected to RPC server ...");
+        accounts = await web3.eth.getAccounts();
+        admin = accounts[0];
         console.log("Set admin = ", admin);
     }
 
@@ -44,6 +45,7 @@ const contract_compile_deploy = async (RPC_SERVER) => {
     // Add new users for test
     // ----------------------------------------------------------------------------
     if (CTRL_CREATE_NEW_USER) {
+        /*
         console.log("******** Add new users for test ********");
         // web3.eth.accounts.create
         // web3.personal.newAccount
@@ -63,6 +65,7 @@ const contract_compile_deploy = async (RPC_SERVER) => {
         users.forEach(function(e) {
             console.log("  accounts: " + e + " \tbalance: " + web3.fromWei(web3.eth.getBalance(e), "ether") + " ether");
         });
+        */
     }
 
     // ----------------------------------------------------------------------------
@@ -71,6 +74,7 @@ const contract_compile_deploy = async (RPC_SERVER) => {
     if (CTRL_COMPILE_CONTRACT) {
         console.log("******** Compile contract ********");
         if (CTRL_USE_COMPILED_CONTRACT) {
+            console.log("******** Use existing contract JSON file ********");
             const CONTRACT_ACG20_PATH = path.resolve(__dirname, '..', 'build', 'contracts', 'ACG20.json');
             const CONTRACT_ACG20_SRC = fs.readFileSync(CONTRACT_ACG20_PATH, 'utf8');
             compiledAcg20 = JSON.parse(CONTRACT_ACG20_SRC);
@@ -86,6 +90,7 @@ const contract_compile_deploy = async (RPC_SERVER) => {
             contract721.bytecode = compiledAcg721.bytecode;
     
         } else {
+            console.log("******** Compile JSON file from contract source ********");
             const CONTRACT_ACG20_PATH = path.resolve(__dirname, '..', 'contracts', 'acg20.sol');
             const CONTRACT_ACG721_PATH = path.resolve(__dirname, '..', 'contracts', 'acg721.sol');
             const LIB_SAFEMATH_PATH = path.resolve(__dirname, '..', 'helpers', 'SafeMath.sol');
@@ -117,7 +122,7 @@ const contract_compile_deploy = async (RPC_SERVER) => {
                 return;
             }
             contract20.abiString = compiledAcg20.interface;
-            contract20.bytecode = compiledAcg20.bytecode;
+            contract20.bytecode = '0x' + compiledAcg20.bytecode;
             contract721.abiString = compiledAcg721.interface;
             contract721.bytecode = '0x' + compiledAcg721.bytecode;
         }
@@ -129,34 +134,39 @@ const contract_compile_deploy = async (RPC_SERVER) => {
     if (CTRL_DEPLOY_CONTRACT) {
         console.log("******** Deploy contract ********");
 
-        contract20.web3Obj = web3.eth.contract(JSON.parse(contract20.abiString));
-        contract721.web3Obj = web3.eth.contract(JSON.parse(contract721.abiString));
+        contract20.web3Obj = new web3.eth.Contract(JSON.parse(contract20.abiString), null, {
+            data: contract20.bytecode
+        });
 
-        // Wrap the web3's contract deployment to Promise
-        async function deployMyContract(contractObj) {
-            return new Promise (function (resolve, reject) {
-                contractObj.web3Obj.new({
-                    from: admin,
-                    data: contractObj.bytecode,
-                    gas: web3.eth.estimateGas({data: contractObj.bytecode})
-                }, function(err, result) {
-                    if (err) {
-                        reject(err);
-                    } else if (result.address) {
-                        // NOTE: The callback will fire twice!
-                        // Once the contract has the transactionHash property set and once its deployed on an address.
-                        // e.g., check tx hash on the first call (transaction send)
-                        resolve(result);
-                    }
-                })
-            })
-        };
-        contract20.deployed = await deployMyContract(contract20);
-        contract721.deployed = await deployMyContract(contract721);
-        
-        console.log("Contracts deployed successfully ...\nACG20 is deployed at: ", 
-        contract20.deployed.address,
-        "\nACG721 is deployed at: ", contract721.deployed.address);
+        //OPTIONAL: Use average gas price to deploy (If you use too low gas price, the transaction may get stuck):
+        /*
+        web3.eth.getGasPrice().
+           then((averageGasPrice) => {
+               console.log("Average gas price: " + averageGasPrice);
+               gasPrice = averageGasPrice;
+           }).
+           catch(console.error);
+        */
+
+        let estimatedGas = await contract20.web3Obj.deploy().estimateGas();
+        console.log("Estimate to use ", estimatedGas, "gas to deploy the contract");
+        contract20.deployed = await contract20.web3Obj.deploy().send({
+            from: admin,
+            gas: estimatedGas
+        });
+
+        contract721.web3Obj = new web3.eth.Contract(JSON.parse(contract721.abiString), null, {
+            data: contract721.bytecode
+        });
+        estimatedGas = await contract721.web3Obj.deploy().estimateGas();
+        console.log("Estimate to use ", estimatedGas, "gas to deploy the contract");
+        contract721.deployed = await contract721.web3Obj.deploy().send({
+            from: admin,
+            gas: estimatedGas
+        });
+        console.log("Contracts deployed successfully ...\nACG20 is deployed at: ",
+        contract20.deployed.options.address,
+        "\nACG721 is deployed at: ", contract721.deployed.options.address);
     }
 
     // ----------------------------------------------------------------------------
@@ -164,10 +174,12 @@ const contract_compile_deploy = async (RPC_SERVER) => {
     // ----------------------------------------------------------------------------
     if (CTRL_TEST_DEPLOYED_CONTRACT) {
         console.log("******** Simple test ********");
-        let acg20Inst = web3.eth.contract(JSON.parse(contract20.abiString)).at(contract20.deployed.address);
-        let acg721Inst = web3.eth.contract(JSON.parse(contract721.abiString)).at(contract721.deployed.address);
-        console.log("Simple test: ACG20 name =", acg20Inst.name());
-        console.log("Simple test: Owner of ACG721 =", acg721Inst.owner());
+        let acg20Inst = new web3.eth.Contract(JSON.parse(contract20.abiString), contract20.deployed.options.address);
+        let acg721Inst = new web3.eth.Contract(JSON.parse(contract721.abiString), contract721.deployed.options.address);
+        const name = await acg20Inst.methods.name().call();
+        const owner = await acg721Inst.methods.owner().call();
+        console.log("Simple test: ACG20 name =", name);
+        console.log("Simple test: Owner of ACG721 =", owner);
     }
 
     // ----------------------------------------------------------------------------
@@ -176,4 +188,5 @@ const contract_compile_deploy = async (RPC_SERVER) => {
     return [contract20, contract721];
 };
 
+//contract_compile_deploy("http://127.0.0.1:31000");
 module.exports = contract_compile_deploy;

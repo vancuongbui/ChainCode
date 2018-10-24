@@ -245,8 +245,6 @@ Not sure why I still find following folders */usr/local/lib/node_modules* (Is th
 
 ### Web3
 
-Use *npm* to install web3. I tested different versions, and **by using latest version (*1.0.0-beta.36*), I failed to connect to a HTTP provider. So just use a stable version (*0.20.7*)**.
-
 To list all available version, use command `npm view web3 versions` to check all available versions, and install required by:
 
 ```shell
@@ -254,6 +252,27 @@ CXX=clang++ npm install -g web3@0.20.7 --save
 npm link web3
 ```
 
+BUG1:
+
+I tested different versions, and ~~**by using latest version (*1.0.0-beta.36*), I failed to connect to a HTTP provider. So just use a stable version (*0.20.7*)**~~.
+
+**FIX**: by using *1.0.0-beta.36* I can still connect to RPC server, but should not expect a direct return from most commands - they all return promise object. For example, I should not expect to get an account array by command `web3.eth.accounts`.
+
+BUG2:
+
+Another issue is when calling a contract method by `myContract.methods.xxx(xxx).send()`, it will never return, even if the method actually did what it is expected to do. And finally I got following error:
+
+```shell
+Error: Transaction was not mined within750 seconds, please make sure your transaction was properly sent. Be aware that it might still be mined!
+```
+
+This is proven to be a bug of web3, see [this link](https://github.com/ethereum/web3.js/issues/1102). According to the post:
+
+> This bug is still present in 1.0.0-beta.36, but NOT in 1.0.0-beta.34.
+Found while working on a private chain with PoA.
+Worked around pinning to 1.0.0-beta.34 in my package.json.
+
+So now use **1.0.0-beta.34** for development.
 
 ### Remix
 
@@ -845,6 +864,14 @@ define api files, setup test framework (try to figure out js module method, done
 18/Oct:
 write mocha test framework for API
 write 4 APIs.
+22/Oct:
+switch from ganache to my own private chain
+work on changing web3 v0.20 back to v1.0.0-beta
+provide more auxilary methods in API js file
+merge my git repo to Cuong's, and commit to github.
+23/Oct:
+**Bug**: when minting token721, contract never return even if the method actually did what it is expected to do. Got it resolved by downgrading web3 version from *1.0.0.beta.36* to *1.0.0.beta.34*.
+
 
 ### Meeting minutes
 

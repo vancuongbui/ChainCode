@@ -19,7 +19,7 @@ contract StandardERC721 {
     using SafeMath for uint256;
 
     mapping(uint => address) internal tokenIdToOwner;
-    mapping(address => uint[]) internal listOfOwnerTokens;
+    mapping(address => uint[]) public listOfOwnerTokens;
     mapping(uint => uint) internal tokenIndexInOwnerArray;
     // Approval mapping
     mapping(uint => address) internal approvedAddressToTransferTokenId;
