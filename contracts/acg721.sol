@@ -167,6 +167,11 @@ contract ACG721 is StandardERC721 {
         emit Minted(_owner, _tokenId);
     }
 
+    // @dev Only contract owner can update token's metadata
+    function updateMetadata(uint256 _tokenId, string _metadata) public onlyOwner() onlyExtantToken(_tokenId) {
+        _insertTokenMetadata(_tokenId, _metadata);
+    }
+
 	// @dev Assigns the ownership of the NFT with ID _tokenId to _to
     function transfer(address _to, uint _tokenId) public onlyExtantToken (_tokenId)
     {

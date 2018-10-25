@@ -5,7 +5,6 @@ var ACG721TOKEN = artifacts.require("ACG721");
 contract('API Support: add_new_user()', function(accounts) {
 
   let acg721Inst;
-
   before ( async () => {
     acg721Inst = await ACG721TOKEN.deployed();
   });
@@ -23,6 +22,7 @@ contract('API Support: post_new_artwork()', function(accounts) {
     
   let acg721Inst;
   let artwork1, artwork2;
+  let admin = accounts[0];
 
   before(async() => {
     acg721Inst = await ACG721TOKEN.deployed();
@@ -59,6 +59,20 @@ contract('API Support: post_new_artwork()', function(accounts) {
     await acg721Inst.mint(accounts[3], 3);
     let userBalance = await acg721Inst.balanceOf.call(accounts[3]);
     assert.equal(userBalance.toNumber(), 1, "User should have 1 artwork token");
+  });
+  it("Only contract owner is able to change token's metadata", async function() {
+    const updated_artwork2 = {
+      "type":"sculpture",
+      "artist":"Quong Bui Van",
+      "loyalty":"0.3",
+      "status":"normal",
+      "prize":"10000"       // change prize of the artwork
+    };
+    // Update token's medata - only contract owner is able to do it.
+    await acg721Inst.updateMetadata(2, JSON.stringify(updated_artwork2), {from: admin});
+    const artwork2_metadata = await acg721Inst.referencedMetadata.call(2);
+    const updated_artwork2_from_contract = JSON.parse(artwork2_metadata);
+    assert.equal(updated_artwork2.prize, updated_artwork2_from_contract.prize, "Token's metadata should be changed");
   });
 });
 contract('API Support: buy_artwork()', function(accounts) {
