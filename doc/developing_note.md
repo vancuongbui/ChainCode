@@ -555,18 +555,24 @@ Option | Explanation
   --rpc | Enable the HTTP-RPC server
   --rpccorsdomain | value Comma separated list of domains from which to accept cross origin requests (browser enforced)
 
-To start the node with:
+To start the node, use following command:
 
+```shell
+geth --datadir node0 --port 30000 --nodiscover --unlock '0' --rpc --rpcapi "web3,eth,net,admin,personal" --rpccorsdomain "http://localhost:8000" --rpcport 31000 --mine
+```
+
+This way guarantees the node:
 - rpc enabled
 - starting mining automatically
 - not locking automatically
 - customized port
 - enforcing browser access
+- permit web3.js to use *peronsal* api to operate on the accounts
 
-use following command:
+If we want to use webSocket to connect (so as to support monitor the events by `events.allEvents` in web3.js), we should start the node by:
 
 ```shell
-geth --datadir node0 --port 30000 --nodiscover --unlock '0' --rpc --rpcapi "web3,eth,net,admin" --rpccorsdomain "*" --rpcport 31000 --mine
+geth --datadir node0 --port 30000 --nodiscover --unlock '0' --ws --wsport 31000 --wsorigins "*" --wsapi "db,web3,eth,net,admin,personal" --mine
 ```
 
 #### Step 4: add peer nodes
@@ -626,13 +632,11 @@ Use remix-ide to connect to private chain, choose *Web3 Provider* under *Run*->*
 Note if we want to use GUI app like Mist to operate on the account, we need to launch it by connecting to local network:
 
 ```shell
-open -a /Applications/Mist.app --args --rpcport "31000" --rpc ~/case/ethereum_privatechain/testnet/node0/geth.ipc
-```
+// 把 127.0.0.1:8545 替换成你的私有链地址
+/Applications/Mist.app/Contents/MacOS/Mist --rpc http://127.0.0.1:31000 --swarmurl="http://swarm-gateways.net"
 
-Or more simply,
-
-```shell
-/Applications/Mist.app/Contents/MacOS/Mist --rpc 127.0.0.1:31000
+// 不启动 rpc 的话，也可以如下直接通过 ipc 通信
+open -a /Applications/Mist.app --args --rpc /path/to/geth.ipc --node-networkid your_network_id --node-datadir /path/to/ethereum/dir/
 ```
 
 #### Step 7: deploy a contract
@@ -654,6 +658,72 @@ undefined
 > b.winningProposal()
 9
 ```
+
+#### Control and adjust the block difficulty
+
+We setup private chain based on POA consesus, so block interval is fixed.
+
+Things are different in main net which use PoW + PoS consesus algorithm. The difficulty increases gradually and sometimes sour with difficulty bomb.
+
+[以太坊私链的挖矿速度与难度值的关系](https://blog.csdn.net/DDFFR/article/details/77095033) indicate how to adjust difficulty and mining time.
+
+[修改挖矿难度](https://www.jianshu.com/p/28ddaad397b8) indicate how to hack the source code to return constant difficulty.
+
+[以太坊(Ethereum ETH)是如何计算难度的](https://zhuanlan.zhihu.com/p/28830859) and [以太坊的挖矿和难度调整过程](https://blog.csdn.net/t46414704152abc/article/details/81538361) explain the source code of difficulty calculation.
+
+#### Account management: Import & Export
+
+New account, when genrated in Geth, will store its private key under keystore file. To export the private key, first install module `npm install keythereum`. Usage is illustarted below:
+
+```javascript
+function getPrivateKey(){
+        var keythereum = require('keythereum');
+        var fromkey = keythereum.importFromFile("账户地址", "私链datadir所在位置");
+        //recover输出为buffer类型的私钥
+        var privateKey = keythereum.recover('该账户的密码', fromkey);
+        console.log(privateKey.toString('hex'));
+
+}
+```
+
+To import the existing account, use `geth account import` command.
+
+```shell
+$ geth account import --datadir /someOtherEthDataDir ./key.prv
+The new account will be encrypted with a passphrase.
+Please enter a passphrase now.
+Passphrase:
+Repeat Passphrase:
+Address: {7f444580bfef4b9bc7e14eb7fb2a029336b07c9d}
+```
+
+#### Restart private chain
+
+Refer to [v1.8.1 Release note](https://github.com/ethereum/go-ethereum/releases/tag/v1.8.1)
+
+> Tracing and pruning: By default, state for the last 128 blocks kept in memory. Most states are garbage collected. If you are running a block explorer or other service relying on transaction tracing without an archive node (--gcmode=archive), you need to trace within this window! Alternatively, specify the "reexec" tracer option to allow regenerating historical state; and ideally switch to chain tracing which amortizes overhead across all traced blocks.
+
+So the solution is: add **--gcmode archive** when you launch geth.
+
+An explanation about this *archive mode* is:
+
+> Archive mode means that all states of values in smart contracts as well as all balances of an account are stored.
+
+> e.g. if the value of a string in a contract changes from XYZ in block 6000000 to ABC in 6000001, you can recall that string's state from block 6000000 with web3.eth.call, providing the blocknumber (as hex value with 0x prefix) as one of the function parameters of this web3 function. This is only possible in archive sync, other syncmodes which prune the past states will have only the latest value available, to be called with the above mentioned function providing "latest" as the blocknumber parameter.
+
+> As far as I know, Parity even offers a sync mode where only a defined amount of past states are logged, limiting the size of the synced chain data.
+
+Remaining question:
+
+- will this affect file size seriously?
+
+#### Security issue: Use IPC, RPC or WebSocket?
+
+
+
+#### How to ensure every account has enough eth to operate on the network?
+
+Minting new eth after the creation of network is **impossible**, refer to [How to mint coins on a private PoA network?](https://ethereum.stackexchange.com/questions/50297/how-to-mint-coins-on-a-private-poa-network).
 
 ### using truffle for development and test
 
