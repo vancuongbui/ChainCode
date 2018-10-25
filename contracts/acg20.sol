@@ -130,6 +130,7 @@ contract ACG20 is StandardERC20 {
     event Mint(address indexed to, uint256 amount);
     event Burn(address indexed to, uint256 amount);
     event Freeze(address indexed from, uint256 amount, uint256 artwork);
+    event Unfreeze(address indexed from, uint256 amount, uint256 artwork);
     event RegisterACG721Contract(address indexed to);
 
 	/**
@@ -216,19 +217,18 @@ contract ACG20 is StandardERC20 {
 
     /**
 	* @dev Freeze given amount of tokens for the auction.
-	* @param _amount uint256 the amount of tokens to be destroyed
-    * @param _amount uint256 the amount of tokens to be destroyed
+	* @param _from uint256 address to freeze tokens from
+    * @param _amount uint256 the amount of tokens to be frozen
+    * @param _artworkId uint256 ID of the artwork in auction
 	*/
     function freeze(address _from, uint256 _amount, uint256 _artworkId) public onlyOwner returns (bool) {
         require(highestBid[_artworkId] < _amount, "Invalid operation: new bid should be greater than previous");
 
-        address prevBidder = highestBidder[_artworkId];
-        uint256 prevBid = highestBid[_artworkId];
-
-        // First withdraw the frozen tokens to previous bidder's account
-        balances[prevBidder] = balances[prevBidder].add(prevBid);
+        // First unfreeze tokens for current bidder (might be same with _from)
+        unfreeze(_artworkId);
 
         // The balance of new bidder should be greater than the bid
+        // If the statement failed here, unfreeze operation will be reverted
         require(balances[_from] >= _amount, "User's bid amount exceeds his balance");
 
         // Freeze tokens from the account of the new bidder
@@ -239,6 +239,27 @@ contract ACG20 is StandardERC20 {
         highestBid[_artworkId] = _amount;
 
         emit Freeze(_from, _amount, _artworkId);
+    }
+
+    /**
+	* @dev Unfreeze tokens for the auction.
+	* @param _artworkId artwork uint256 ID of the artwork in auction
+	*/
+    function unfreeze(uint256 _artworkId) public onlyOwner returns (bool) {
+        address bidder = highestBidder[_artworkId];
+        uint256 bid = highestBid[_artworkId];
+
+        if (bidder != address(0)) {
+            // Withdraw the frozen tokens to bidder's account
+            balances[bidder] = balances[bidder].add(bid);
+
+            // Reset bid and bidder
+            highestBidder[_artworkId] = address(0);
+            highestBid[_artworkId] = 0;
+
+            emit Unfreeze(bidder, bid, _artworkId);
+        }
+        return true;
     }
 
     /**
