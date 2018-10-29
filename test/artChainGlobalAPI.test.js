@@ -79,6 +79,7 @@ describe('API basic test framework', async function () {
         // 2. retrieve existing accounts from the node and use
         //    their remaining balances
         // ----------------------------------------------------------
+        /*
         if (CREATE_NEW_ACCOUNTS_FOR_TEST) {
             // Create test accounts with prefunded eth
             for (let i=0; i<user_number; i++) {
@@ -93,6 +94,7 @@ describe('API basic test framework', async function () {
             const userBalance = await web3.eth.getBalance(users[i]);
             console.log("Test accounts: ", users[i], "initial balance is ", web3.utils.fromWei(userBalance, "ether"), "ether");
         }
+        */
 
         // ----------------------------------------------------------
         // Environment ready to use
@@ -106,19 +108,22 @@ describe('API basic test framework', async function () {
 
         // Store new user address to the contract
         for (let i=0; i<user_number; i++) {
-            trans_add_new_user[i] = acgApi.add_new_user(users[i]);
+            trans_add_new_user[i] = acgApi.add_new_user();
         }
-
         // Expect the operation succeeded
         for (let i=0; i<user_number; i++) {
-            const add_new_user_result = await trans_add_new_user[i];
-            assert.ok(add_new_user_result, "Adding new user succeeded");
+            users[i] = await trans_add_new_user[i];
         }
+        // Check the initial status of new added accounts
+        for (let i=0; i<user_number; i++) {
+            const userBalance = await web3.eth.getBalance(users[i]);
+            console.log("Test accounts: ", users[i], "initial balance is ", web3.utils.fromWei(userBalance, "ether"), "ether");
+        }
+
         // New user's balance is expected to be zero
         const expected_acg20_balance = 0;
         const expected_acg721_balance = 0;
 
-        
         const trans_acg20_balance = [];
         const trans_acg721_balance = [];
         for (let i=0; i<user_number; i++) {

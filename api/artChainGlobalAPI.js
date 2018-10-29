@@ -11,6 +11,8 @@ function ACGChainAPI() {
     let web3;
     let administrator;
 
+    const new_account_password = "password";
+    const new_account_topup_value = 1e2;
     const post_artwork_incentive = 1e3;
 
     async function connect_to_chain(rpc_provider) {
@@ -180,12 +182,16 @@ function ACGChainAPI() {
         return users.slice(2, 2+user_number);
     }
 
-    async function add_new_user(user_address) {
-        const init_token20_balance = 0;
-        await contract20.instance.methods.mint(user_address, init_token20_balance).send({
-            from: administrator
+    async function add_new_user() {
+        // Create a new account on the node
+        const user_address = await web3.eth.personal.newAccount(new_account_password);
+        // Top up some eth for new user
+        await web3.eth.sendTransaction({
+            from: administrator,
+            to: user_address,
+            value: web3.utils.toWei(new_account_topup_value.toString(), "ether")
         });
-        return true;
+        return user_address;
     }
 
     async function post_new_artwork(user_address, artwork_info) {
