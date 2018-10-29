@@ -245,7 +245,7 @@ function ACGChainAPI() {
         return receipt.transactionHash;
     }
 
-    async function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
+    async function freeze_token(buyer_address, artwork_id, artwork_prize) {
         // Check artwork status is in auction
         const artwork_info = await contract721.instance.methods.referencedMetadata(artwork_id).call();
         if (artwork_info.length <= 0) {

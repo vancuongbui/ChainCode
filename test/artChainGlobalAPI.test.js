@@ -261,7 +261,7 @@ describe('API basic test framework', async function () {
 
             const artwork_id = artwork_id_list[0];
             const artwork_bid = 1e7;
-            await acgApi.freeze_token(buyer1, artwork_id, artwork_bid, 0);
+            await acgApi.freeze_token(buyer1, artwork_id, artwork_bid);
 
             buyer_balance_20 -= artwork_bid;
             const buyer_balance_after = await acg20Inst.methods.balanceOf(buyer1).call();
