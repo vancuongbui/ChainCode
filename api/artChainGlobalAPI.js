@@ -90,24 +90,42 @@ function ACGChainAPI() {
     }
 
     async function deploy_new_contracts() {
+        // Generate new contract objects
         contract20.instance = new web3.eth.Contract(JSON.parse(contract20.abiString), null, {
             data: contract20.bytecode
         });
-
-        let estimatedGas = await contract20.instance.deploy().estimateGas();
-        contract20.instance = await contract20.instance.deploy().send({
-            from: administrator,
-            gas: estimatedGas
-        });
-
         contract721.instance = new web3.eth.Contract(JSON.parse(contract721.abiString), null, {
             data: contract721.bytecode
         });
-        estimatedGas = await contract721.instance.deploy().estimateGas();
-        contract721.instance = await contract721.instance.deploy().send({
+
+        // Estimate gas required to deploy the contracts
+        const trans_estimate_gas_20 = contract20.instance.deploy().estimateGas();
+        const trans_estimate_gas_721 = contract721.instance.deploy().estimateGas();
+        const gas_acg20 = await trans_estimate_gas_20;
+        const gas_acg721 = await trans_estimate_gas_721;
+
+        // Deploy the contracts
+        const trans_deploy_acg20 = contract20.instance.deploy().send({
             from: administrator,
-            gas: estimatedGas
+            gas: gas_acg20
         });
+        const trans_deploy_acg721 = contract721.instance.deploy().send({
+            from: administrator,
+            gas: gas_acg721
+        });
+        contract20.instance = await trans_deploy_acg20;
+        contract721.instance = await trans_deploy_acg721;
+
+        // Register each other for subsequent transactions
+        const trans_register_20 = contract20.instance.methods.registerACG721Contract(contract721.instance.options.address).send({
+            from: administrator
+        });
+        const trans_register_721 = contract721.instance.methods.registerACG20Contract(contract20.instance.options.address).send({
+            from: administrator
+        });
+        await trans_register_20;
+        await trans_register_721;
+
         console.log("Contracts deployed successfully ...\nACG20 is deployed at: ",
         contract20.instance.options.address,
         "\nACG721 is deployed at: ", contract721.instance.options.address);
