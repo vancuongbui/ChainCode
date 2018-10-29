@@ -218,6 +218,20 @@ function ACGChainAPI() {
         return artwork_id;
     }
 
+    async function update_artwork(artwork_id, artwork_info) {
+        // Generate meta data
+        const metadata = JSON.stringify(artwork_info);
+
+        // Update meta data with the given token ID
+        const gasValue = await contract721.instance.methods.updateMetadata(artwork_id, metadata).estimateGas({
+            from: administrator
+        });
+        await contract721.instance.methods.updateMetadata(artwork_id, metadata).send({
+            from: administrator,
+            gas: gasValue
+        });
+    }
+
     function buy_artwork(buyer_address, owner_address, artwork_id, artwork_prize) {
         let transaction_id = 0;
         return transaction_id;
@@ -311,6 +325,7 @@ function ACGChainAPI() {
         // ----------------------------
         add_new_user: add_new_user,
         post_new_artwork: post_new_artwork,
+        update_artwork: update_artwork,
         buy_artwork: buy_artwork,
         buy_token: buy_token,
         freeze_token: freeze_token,

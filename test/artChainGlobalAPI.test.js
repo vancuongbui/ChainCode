@@ -14,8 +14,8 @@ const RETRIEVE_DEPLOYED_CONTRACTS_FROM_CHAIN = true;
 const SIMPLE_TEST_ON_ENVIRONMENT = false;
 const CREATE_NEW_ACCOUNTS_FOR_TEST = false;
 const contract_address = [
-    '0x81046AF5312eE8D8f7AbBe2528e0419E0E2554E6',
-    '0x9924B156F473e0ed26C5ebd819Ba28A9Bb84E63B'
+    '0x85014cAa68684bB90423009B072C710ad2ABAe72',
+    '0x6AD1eCC591916f05dA178409d15C120a6Aa4c593'
 ];
 
 describe('API basic test framework', async function () {
@@ -189,6 +189,21 @@ describe('API basic test framework', async function () {
             Number(acg721_balance_before) + artwork_number,
             Number(acg721_balance_after),
             "ACG721 balance should increase by 1");
+        });
+
+        it('Test API: update_artwork', async() => {
+            const updated_artwork_id = artwork_id_list[0];
+            const updated_info = {
+                "type":"paint",
+                "artist":"Lin Yang",
+                "loyalty":"0.1",
+                "status":"private",
+                "prize":"10000"  
+            };
+            await acgApi.update_artwork(updated_artwork_id, JSON.stringify(updated_info));
+            const updated_metadata = await acg721Inst.methods.referencedMetadata(updated_artwork_id).call();
+            artwork_info_after = JSON.parse(updated_metadata);
+            //assert.equal(artwork_info_after.status, "private", "Artwork status should be changed");
         });
 
         it('Test API: buy_artwork', async() => {
