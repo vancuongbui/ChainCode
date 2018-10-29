@@ -1,17 +1,11 @@
 const AcgApi = require('../api/artChainGlobalAPI.js');
 const path = require('path');
+const chainConf = require('./chainConf.json');
 
-const RPC_SERVER = "http://127.0.0.1:31000"
+const RPC_SERVER = chainConf.RPC_SERVER;
+
 const acgApi = AcgApi();
 let web3;
-
-const CTRL_COMPILE_NEW_CONTRACT_AND_DEPLOY = false;
-const CTRL_CREATE_NEW_ACCOUTNS_FOR_TEST = false;
-
-const contract_address = [
-    '0x649D7F521CEd7a9969bC97F7DD5Db46aeF0a93e0',
-    '0x3Fc2b3A1E5dc3EAdb1b79108eA8c4A4DF21dB45E'
-];
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -23,7 +17,7 @@ async function prepare () {
     // ----------------------------------------------------------
     web3 = await acgApi.connect_to_chain(RPC_SERVER);
 
-    if (CTRL_COMPILE_NEW_CONTRACT_AND_DEPLOY) {
+    if (chainConf.CTRL_COMPILE_NEW_CONTRACT_AND_DEPLOY) {
         // ----------------------------------------------------------
         // Compile new contracts from source code and deploy to chain
         // ----------------------------------------------------------
@@ -44,13 +38,17 @@ async function prepare () {
         acgApi.read_in_compiled_contract_JSON(contract_folder);
         
         // Step 2. Retrieve deployed contracts instance by address and interface
+        const contract_address = [
+            chainConf.CONTRACT_20_ADDRESS,
+            chainConf.CONTRACT_721_ADDRESS
+        ];
         await acgApi.retrieve_deployed_contracts(contract_address);
     }
 
     // ----------------------------------------------------------
     // CREATE NEW ACCOUNTS ON THE NODE FOR TEST
     // ----------------------------------------------------------
-    if (CTRL_CREATE_NEW_ACCOUTNS_FOR_TEST) {
+    if (chainConf.CTRL_CREATE_NEW_ACCOUTNS_FOR_TEST) {
         const user_number = 5;
         const prefund_eth = 1e6;
         let users = [];
