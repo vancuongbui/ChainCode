@@ -12,10 +12,9 @@ const acgApi = AcgApi();
 const COMPILE_CONTRACTS_FROM_SOURCE_FILE = false;
 const RETRIEVE_DEPLOYED_CONTRACTS_FROM_CHAIN = true;
 const SIMPLE_TEST_ON_ENVIRONMENT = false;
-const CREATE_NEW_ACCOUNTS_FOR_TEST = false;
 const contract_address = [
-    '0x85014cAa68684bB90423009B072C710ad2ABAe72',
-    '0x6AD1eCC591916f05dA178409d15C120a6Aa4c593'
+    '0x02307AB6765eb89A5727564E35C879d633f0432E',
+    '0x36Afaa7C3eBCac960EC522ba3D3Ff439d7900a0B'
 ];
 
 describe('API basic test framework', async function () {
@@ -136,12 +135,10 @@ describe('API basic test framework', async function () {
             const acg20_balance = await trans_acg20_balance[i];
             const acg721_balance = await trans_acg721_balance[i];
 
-            if (CREATE_NEW_ACCOUNTS_FOR_TEST) {
-                assert.equal(expected_acg20_balance, Number(acg20_balance),
-                "New user's balance of ACG20 token should be zero");
-                assert.equal(expected_acg721_balance, Number(acg721_balance),
-                "New user's balance of ACG721 token should be zero");    
-            }
+            assert.equal(expected_acg20_balance, Number(acg20_balance),
+            "New user's balance of ACG20 token should be zero");
+            assert.equal(expected_acg721_balance, Number(acg721_balance),
+            "New user's balance of ACG721 token should be zero");
         }
     });
 
