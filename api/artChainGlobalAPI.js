@@ -200,8 +200,43 @@ function ACGChainAPI() {
         return artwork_id;
     }
 
-    function buy_artwork(buyer_address, owner_address, artwork_id, artwork_prize) {
+    function buy_artwork(buyer_address, owner_address, artwork_id, artwork_prize, status) {
         let transaction_id = 0;
+        // check if the artwork_id was existing in the chain and its owner match the one provided
+        const checkExistingArtwork = await contract721.instance.methods.ownerOf(artwork_id).call();
+        if (checkExistingArtwork != owner_address) {
+            //if the artwork is for sale
+            if (status === "selling") {
+                //perform the transaction
+                result = await contract721.instance.methods.receiveApproval(
+                    buyer_address,
+                    owner_address,
+                    artwork_prize,
+                    artwork_id,
+                ).send({ from: administrator })
+                transaction_id = result;
+            }
+            //else if the artwork is for auction
+            else if (status === "auction") {
+                bid_price = await contract20.instance.methods.highBid.call();
+                bidder = await contract20.instance.methods.highBidder.call();
+                if (bidder != buyer_address) {
+                    console.log("mismatch buyer and bidder");
+                } else {
+                    //perform the transaction
+                    result = await contract721.instance.methods.receiveApproval(
+                        buyer_address,
+                        owner_address,
+                        artwork_prize,
+                        artwork_id,
+                    ).send({ from: administrator })
+                    transaction_id = result;
+                }
+            } else {
+                //in any other case, return transaction_id = 0;
+                return;
+            }
+        }
         return transaction_id;
     }
 
