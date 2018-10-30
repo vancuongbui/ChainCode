@@ -2,7 +2,7 @@ const assert = require('assert');
 require('mocha');
 //require("@babel/register");
 //const ganache = require('ganache-cli');   //note that ganache does not work on private chain
-//import web3
+//import web3////
 const Web3 = require('web3');
 // import ACG20 token deployed before
 const ACG20_module = require('../contract_API/ACG20Token');
@@ -17,6 +17,7 @@ NodeIPAddresses.forEach(element => {
     web3Array.push(new Web3(new Web3.providers.HttpProvider(element.IPAddress)));
 });
 // console.log(web3Array);
+// consolo.log("something")
 
 // var provider = new Web3.providers.HttpProvider(NodeIPAddresses[0].IPAddress);
 // var provider_2 = new Web3.providers.HttpProvider(NodeIPAddresses[1].IPAddress);
@@ -61,28 +62,28 @@ before(async () => {
     console.log("Get account 0 of node 3", node3_accounts[0]);
     //console.log(interface);
 
-    const destAccount = node0_accounts[1];
-    const fromAccount = node0_accounts[2];
-    // topup some to sender before transfer
-    const topupValue = 10000;
-    const topupAddress = node0_accounts[0];
+    // const destAccount = node0_accounts[1];
+    // const fromAccount = node0_accounts[2];
+    // // topup some to sender before transfer
+    // const topupValue = 10000;
+    // const topupAddress = node0_accounts[0];
     
-    await ACG20Token.methods.mint(topupAddress, topupValue).send({
-        from: node0_accounts[0]
-    });
-    await ACG20Token.methods.mint(destAccount, topupValue).send({
-        from: node0_accounts[0]
-    });
-    //topup for owner
-    await ACG20Token.methods.mint(fromAccount, topupValue).send({
-        from: node0_accounts[0]
-    });
-    const currentOwnerBalance = await ACG20Token.methods.balanceOf(node0_accounts[0]).call();
-    const currentSendBalance = await ACG20Token.methods.balanceOf(fromAccount).call();     //we pre-set it before
-    const currentDestBalance = await ACG20Token.methods.balanceOf(destAccount).call(); 
-    console.log("Owner balance currently is: ", currentOwnerBalance);
-    console.log("sender balance after topup of sender account is: ", currentSendBalance);
-    console.log("destination balance: ", currentDestBalance);   
+    // await ACG20Token.methods.mint(topupAddress, topupValue).send({
+    //     from: node0_accounts[0]
+    // });
+    // await ACG20Token.methods.mint(destAccount, topupValue).send({
+    //     from: node0_accounts[0]
+    // });
+    // //topup for owner
+    // await ACG20Token.methods.mint(fromAccount, topupValue).send({
+    //     from: node0_accounts[0]
+    // });
+    // const currentOwnerBalance = await ACG20Token.methods.balanceOf(node0_accounts[0]).call();
+    // const currentSendBalance = await ACG20Token.methods.balanceOf(fromAccount).call();     //we pre-set it before
+    // const currentDestBalance = await ACG20Token.methods.balanceOf(destAccount).call(); 
+    // console.log("Owner balance currently is: ", currentOwnerBalance);
+    // console.log("sender balance after topup of sender account is: ", currentSendBalance);
+    // console.log("destination balance: ", currentDestBalance);   
 
     const web3Standard = require('web3');
     await web3Array[0].eth.personal.unlockAccount(node0_accounts[1], "Test@2018", 60*60*24*365*10);
@@ -127,7 +128,7 @@ describe('ArtChainGlobal ACG721 token smart contract', () => {
             "status":"normal",
             "prize":"10000"
           };
-        const artwork_id = 1111;
+        const artwork_id = 1112;
         try {
             const previousNumberOfArtwork = await ACG721Token.methods.balanceOf(user_address).call();
             console.log("number of artowrk os user: ", previousNumberOfArtwork);
@@ -157,7 +158,7 @@ describe('ArtChainGlobal ACG721 token smart contract', () => {
             "status":"normal",
             "prize":"10000"
           };
-        const artwork_id = 2221;
+        const artwork_id = 2222;
         const metadata = JSON.stringify(artwork1);
         const previousNumberOfArtwork = await ACG721Token.methods.balanceOf(user_address).call();
         console.log("number of artowrk os user: ", previousNumberOfArtwork);
@@ -202,7 +203,7 @@ describe('ArtChainGlobal ACG721 token smart contract', () => {
         console.log("buyer account is: ", buyer_address);
         console.log("owner account is ", owner_address);
         
-        const artworkid = 2221;
+        const artworkid = 2222;
         // check the artworkid is existing in the system or not
         const existingOnwer = await ACG721Token.methods.ownerOf(artworkid).call();
         console.log("onwner of this artwork: ", existingOnwer);
