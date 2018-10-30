@@ -258,6 +258,13 @@ contract('API Support: freeze_token()', function(accounts) {
     balance = await acg20Inst.balanceOf.call(artist);
     assert.equal(balance.toNumber(), userBalance[artist], "Balance of artist should increase after auction");
   });
+  it("If auction is cancelled, then user's frozen token should be returned to his account", async() => {
+    await acg20Inst.unfreeze(artwork1, {from:admin});
+    userBalance[bidderForArt1] += bidForArt1;
+
+    const balance = await acg20Inst.balanceOf.call(bidderForArt1);
+    assert.equal(balance.toNumber(), userBalance[bidderForArt1], "Frozen tokens should be returned if the auction cancelled");
+  });
 });
 
 contract('API Support: check_artwork()', function(accounts) {

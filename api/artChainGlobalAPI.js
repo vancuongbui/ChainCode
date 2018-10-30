@@ -11,6 +11,8 @@ function ACGChainAPI() {
     let web3;
     let administrator;
 
+    const new_account_password = "password";
+    const new_account_topup_value = 1e2;
     const post_artwork_incentive = 1e3;
 
     async function connect_to_chain(rpc_provider) {
@@ -90,24 +92,42 @@ function ACGChainAPI() {
     }
 
     async function deploy_new_contracts() {
+        // Generate new contract objects
         contract20.instance = new web3.eth.Contract(JSON.parse(contract20.abiString), null, {
             data: contract20.bytecode
         });
-
-        let estimatedGas = await contract20.instance.deploy().estimateGas();
-        contract20.instance = await contract20.instance.deploy().send({
-            from: administrator,
-            gas: estimatedGas
-        });
-
         contract721.instance = new web3.eth.Contract(JSON.parse(contract721.abiString), null, {
             data: contract721.bytecode
         });
-        estimatedGas = await contract721.instance.deploy().estimateGas();
-        contract721.instance = await contract721.instance.deploy().send({
+
+        // Estimate gas required to deploy the contracts
+        const trans_estimate_gas_20 = contract20.instance.deploy().estimateGas();
+        const trans_estimate_gas_721 = contract721.instance.deploy().estimateGas();
+        const gas_acg20 = await trans_estimate_gas_20;
+        const gas_acg721 = await trans_estimate_gas_721;
+
+        // Deploy the contracts
+        const trans_deploy_acg20 = contract20.instance.deploy().send({
             from: administrator,
-            gas: estimatedGas
+            gas: gas_acg20
         });
+        const trans_deploy_acg721 = contract721.instance.deploy().send({
+            from: administrator,
+            gas: gas_acg721
+        });
+        contract20.instance = await trans_deploy_acg20;
+        contract721.instance = await trans_deploy_acg721;
+
+        // Register each other for subsequent transactions
+        const trans_register_20 = contract20.instance.methods.registerACG721Contract(contract721.instance.options.address).send({
+            from: administrator
+        });
+        const trans_register_721 = contract721.instance.methods.registerACG20Contract(contract20.instance.options.address).send({
+            from: administrator
+        });
+        await trans_register_20;
+        await trans_register_721;
+
         console.log("Contracts deployed successfully ...\nACG20 is deployed at: ",
         contract20.instance.options.address,
         "\nACG721 is deployed at: ", contract721.instance.options.address);
@@ -162,12 +182,16 @@ function ACGChainAPI() {
         return users.slice(2, 2+user_number);
     }
 
-    async function add_new_user(user_address) {
-        const init_token20_balance = 0;
-        await contract20.instance.methods.mint(user_address, init_token20_balance).send({
-            from: administrator
+    async function add_new_user() {
+        // Create a new account on the node
+        const user_address = await web3.eth.personal.newAccount(new_account_password);
+        // Top up some eth for new user
+        await web3.eth.sendTransaction({
+            from: administrator,
+            to: user_address,
+            value: web3.utils.toWei(new_account_topup_value.toString(), "ether")
         });
-        return true;
+        return user_address;
     }
 
     async function post_new_artwork(user_address, artwork_info) {
@@ -200,44 +224,18 @@ function ACGChainAPI() {
         return artwork_id;
     }
 
-    function buy_artwork(buyer_address, owner_address, artwork_id, artwork_prize, status) {
-        let transaction_id = 0;
-        // check if the artwork_id was existing in the chain and its owner match the one provided
-        const checkExistingArtwork = await contract721.instance.methods.ownerOf(artwork_id).call();
-        if (checkExistingArtwork != owner_address) {
-            //if the artwork is for sale
-            if (status === "selling") {
-                //perform the transaction
-                result = await contract721.instance.methods.receiveApproval(
-                    buyer_address,
-                    owner_address,
-                    artwork_prize,
-                    artwork_id,
-                ).send({ from: administrator })
-                transaction_id = result;
-            }
-            //else if the artwork is for auction
-            else if (status === "auction") {
-                bid_price = await contract20.instance.methods.highBid.call();
-                bidder = await contract20.instance.methods.highBidder.call();
-                if (bidder != buyer_address) {
-                    console.log("mismatch buyer and bidder");
-                } else {
-                    //perform the transaction
-                    result = await contract721.instance.methods.receiveApproval(
-                        buyer_address,
-                        owner_address,
-                        artwork_prize,
-                        artwork_id,
-                    ).send({ from: administrator })
-                    transaction_id = result;
-                }
-            } else {
-                //in any other case, return transaction_id = 0;
-                return;
-            }
-        }
-        return transaction_id;
+    async function update_artwork(artwork_id, artwork_info) {
+        // Generate meta data
+        const metadata = JSON.stringify(artwork_info);
+
+        // Update meta data with the given token ID
+        const gasValue = await contract721.instance.methods.updateMetadata(artwork_id, metadata).estimateGas({
+            from: administrator
+        });async
+        await contract721.instance.methods.updateMetadata(artwork_id, metadata).send({
+            from: administrator,
+            gas: gasValue
+        });
     }
 
     async function buy_token(buyer_address, value) {
@@ -248,7 +246,7 @@ function ACGChainAPI() {
         return receipt.transactionHash;
     }
 
-    async function freeze_token(buyer_address, artwork_id, artwork_prize, auction_time) {
+    async function freeze_token(buyer_address, artwork_id, artwork_prize) {
         // Check artwork status is in auction
         const artwork_info = await contract721.instance.methods.referencedMetadata(artwork_id).call();
         if (artwork_info.length <= 0) {
@@ -328,6 +326,7 @@ function ACGChainAPI() {
         // ----------------------------
         add_new_user: add_new_user,
         post_new_artwork: post_new_artwork,
+        update_artwork: update_artwork,
         buy_artwork: buy_artwork,
         buy_token: buy_token,
         freeze_token: freeze_token,

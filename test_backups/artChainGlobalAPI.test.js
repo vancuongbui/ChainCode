@@ -12,10 +12,9 @@ const acgApi = AcgApi();
 const COMPILE_CONTRACTS_FROM_SOURCE_FILE = false;
 const RETRIEVE_DEPLOYED_CONTRACTS_FROM_CHAIN = true;
 const SIMPLE_TEST_ON_ENVIRONMENT = false;
-const CREATE_NEW_ACCOUNTS_FOR_TEST = false;
 const contract_address = [
-    '0x81046AF5312eE8D8f7AbBe2528e0419E0E2554E6',
-    '0x9924B156F473e0ed26C5ebd819Ba28A9Bb84E63B'
+    '0x02307AB6765eb89A5727564E35C879d633f0432E',
+    '0x36Afaa7C3eBCac960EC522ba3D3Ff439d7900a0B'
 ];
 
 describe('API basic test framework', async function () {
@@ -79,6 +78,7 @@ describe('API basic test framework', async function () {
         // 2. retrieve existing accounts from the node and use
         //    their remaining balances
         // ----------------------------------------------------------
+        /*
         if (CREATE_NEW_ACCOUNTS_FOR_TEST) {
             // Create test accounts with prefunded eth
             for (let i=0; i<user_number; i++) {
@@ -93,6 +93,7 @@ describe('API basic test framework', async function () {
             const userBalance = await web3.eth.getBalance(users[i]);
             console.log("Test accounts: ", users[i], "initial balance is ", web3.utils.fromWei(userBalance, "ether"), "ether");
         }
+        */
 
         // ----------------------------------------------------------
         // Environment ready to use
@@ -106,19 +107,22 @@ describe('API basic test framework', async function () {
 
         // Store new user address to the contract
         for (let i=0; i<user_number; i++) {
-            trans_add_new_user[i] = acgApi.add_new_user(users[i]);
+            trans_add_new_user[i] = acgApi.add_new_user();
         }
-
         // Expect the operation succeeded
         for (let i=0; i<user_number; i++) {
-            const add_new_user_result = await trans_add_new_user[i];
-            assert.ok(add_new_user_result, "Adding new user succeeded");
+            users[i] = await trans_add_new_user[i];
         }
+        // Check the initial status of new added accounts
+        for (let i=0; i<user_number; i++) {
+            const userBalance = await web3.eth.getBalance(users[i]);
+            console.log("Test accounts: ", users[i], "initial balance is ", web3.utils.fromWei(userBalance, "ether"), "ether");
+        }
+
         // New user's balance is expected to be zero
         const expected_acg20_balance = 0;
         const expected_acg721_balance = 0;
 
-        
         const trans_acg20_balance = [];
         const trans_acg721_balance = [];
         for (let i=0; i<user_number; i++) {
@@ -131,12 +135,10 @@ describe('API basic test framework', async function () {
             const acg20_balance = await trans_acg20_balance[i];
             const acg721_balance = await trans_acg721_balance[i];
 
-            if (CREATE_NEW_ACCOUNTS_FOR_TEST) {
-                assert.equal(expected_acg20_balance, Number(acg20_balance),
-                "New user's balance of ACG20 token should be zero");
-                assert.equal(expected_acg721_balance, Number(acg721_balance),
-                "New user's balance of ACG721 token should be zero");    
-            }
+            assert.equal(expected_acg20_balance, Number(acg20_balance),
+            "New user's balance of ACG20 token should be zero");
+            assert.equal(expected_acg721_balance, Number(acg721_balance),
+            "New user's balance of ACG721 token should be zero");
         }
     });
 
@@ -189,6 +191,21 @@ describe('API basic test framework', async function () {
             Number(acg721_balance_before) + artwork_number,
             Number(acg721_balance_after),
             "ACG721 balance should increase by 1");
+        });
+
+        it('Test API: update_artwork', async() => {
+            const updated_artwork_id = artwork_id_list[0];
+            const updated_info = {
+                "type":"paint",
+                "artist":"Lin Yang",
+                "loyalty":"0.1",
+                "status":"private",
+                "prize":"10000"  
+            };
+            await acgApi.update_artwork(updated_artwork_id, JSON.stringify(updated_info));
+            const updated_metadata = await acg721Inst.methods.referencedMetadata(updated_artwork_id).call();
+            artwork_info_after = JSON.parse(updated_metadata);
+            //assert.equal(artwork_info_after.status, "private", "Artwork status should be changed");
         });
 
         it('Test API: buy_artwork', async() => {
@@ -246,7 +263,7 @@ describe('API basic test framework', async function () {
 
             const artwork_id = artwork_id_list[0];
             const artwork_bid = 1e7;
-            await acgApi.freeze_token(buyer1, artwork_id, artwork_bid, 0);
+            await acgApi.freeze_token(buyer1, artwork_id, artwork_bid);
 
             buyer_balance_20 -= artwork_bid;
             const buyer_balance_after = await acg20Inst.methods.balanceOf(buyer1).call();
