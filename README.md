@@ -8,6 +8,8 @@ https://infura.io   //access to ethereum network
 https://ethereum.stackexchange.com/a/47654.
 https://rinkeby.etherscan.io/   //where you want to see you contract deploy on rinkeby
 
+Testing:
+
 
 ERROR:
     - The contract code couldn't be stored, please check your gas limit.
